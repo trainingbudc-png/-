@@ -28,36 +28,19 @@
       <div class="flex-1 border-t border-slate-200"></div>
     </div>
     <button onclick="lineLogin()" class="w-full bg-[#06C755] hover:bg-[#05b34c] text-white font-bold py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
-      <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M24 10.304c0-5.222-5.383-9.47-12-9.47S0 5.082 0 10.304c0 4.678 4.253 8.584 10 9.341.389.084.918.257 1.053.589.12.296.079.76.039 1.06l-.169 1.023c-.052.303-.25 1.186 1.081.646 1.331-.54 7.177-4.225 9.792-7.234 1.832-1.993 2.198-3.923 2.198-5.465zm-14.153 3.633h-2.14v-5.2h.714v4.486h1.426v.714zm2.142 0h-.714v-5.2h.714v5.2zm3.327-.714c0 .394-.32.714-.714.714h-1.636v-5.2h.714v4.486h.922c.394 0 .714.32.714.714zm1.902-.714h-1.426v-.931h1.426v-.714h-1.426v-.93 h1.426v-.714h-2.14v5.2h2.14v-.711z"/></svg>
+      <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M24 10.304c0-5.222-5.383-9.47-12-9.47S0 5.082 0 10.304c0 4.678 4.253 8.584 10 9.341.389.084.918.257 1.053.589.12.296.079.76.039 1.06l-.169 1.023c-.052.303-.25 1.186 1.081.646 1.331-.54 7.177-4.225 9.792-7.234 1.832-1.993 2.198-3.923 2.198-5.465zm-14.153 3.633h-2.14v-5.2h.714v4.486h1.426v.714zm2.142 0h-.714v-5.2h.714v5.2zm3.327-.714c0 .394-.32.714-.714.714h-1.636v-5.2h.714v4.486h.922c.394 0 .714.32.714.714zm1.902-.714h-1.426v-.931h1.426v-.714h-1.426v-.93h1.426v-.714h-2.14v5.2h2.14v-.711z"/></svg>
       เข้าสู่ระบบด้วย LINE
     </button>
   </div>
 
   <div id="appPage" class="hidden max-w-lg mx-auto p-4 space-y-4">
     
-    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
       <div class="flex justify-between items-center">
         <h2 id="pageTitle" class="text-xl font-extrabold text-slate-800">📝 บันทึกรายการ</h2>
         <div class="flex items-center gap-2">
           <span id="displayUser" class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">User</span>
           <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-full text-sm font-medium transition-all shadow-sm">🚪</button>
-        </div>
-      </div>
-
-      <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-2">
-        <div class="text-xs font-bold text-slate-500 flex items-center gap-1">📅 ตัวกรองเลือกช่วงเวลา (วัน/เดือน/ปี)</div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="text-[10px] text-slate-400 block mb-0.5">วันที่เริ่มต้น</label>
-            <input type="date" id="filter-start" onchange="applyFilter()" class="w-full bg-white border border-slate-200 p-2 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          <div>
-            <label class="text-[10px] text-slate-400 block mb-0.5">วันที่สิ้นสุด</label>
-            <input type="date" id="filter-end" onchange="applyFilter()" class="w-full bg-white border border-slate-200 p-2 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-        </div>
-        <div class="flex justify-end">
-          <button onclick="clearFilter()" class="text-[11px] text-red-500 hover:underline font-semibold">ล้างตัวกรอง</button>
         </div>
       </div>
     </div>
@@ -79,20 +62,40 @@
         <button onclick="save()" id="saveBtn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl transition-all shadow-md">บันทึกข้อมูล</button>
       </div>
 
-      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-        <div class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-1.5">
-          <span>🕒 รายละเอียดประวัติรายการเข้า - ออก</span>
-          <span id="history-count" class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-normal"></span>
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+        <div class="flex justify-between items-center">
+          <span class="text-sm font-bold text-slate-700">🕒 ประวัติรายการเข้า - ออก</span>
+          <span id="history-count" class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">0 รายการ</span>
         </div>
-        <div id="history-list" class="space-y-2 max-h-[400px] overflow-y-auto pr-1">
-          <p class="text-center text-slate-400 text-xs py-4">⏳ กำลังโหลดประวัติการบันทึกของคุณ...</p>
+        
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs space-y-2">
+          <div class="text-[11px] font-bold text-slate-500">🔍 ตัวกรองประวัติรายการ:</div>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="date" id="history-start" onchange="renderHistory()" class="w-full bg-white border border-slate-200 p-1.5 rounded-lg text-xs outline-none focus:ring-1 focus:ring-blue-500">
+            <input type="date" id="history-end" onchange="renderHistory()" class="w-full bg-white border border-slate-200 p-1.5 rounded-lg text-xs outline-none focus:ring-1 focus:ring-blue-500">
+          </div>
+          <div class="flex justify-end"><button onclick="clearHistoryFilter()" class="text-[10px] text-red-500 hover:underline">ล้างตัวกรองประวัติ</button></div>
+        </div>
+
+        <div id="history-list" class="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+          <p class="text-center text-slate-400 text-xs py-4">⏳ กำลังโหลดประวัติ...</p>
         </div>
       </div>
     </div>
 
     <div id="tab-dashboard" class="hidden space-y-4">
+      
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-2">
+        <div class="text-xs font-bold text-slate-600 flex items-center gap-1">📊 ตัวกรองช่วงเวลาของแดชบอร์ด:</div>
+        <div class="grid grid-cols-2 gap-2">
+          <input type="date" id="dash-start" onchange="renderDashboard()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs outline-none focus:ring-1 focus:ring-blue-500">
+          <input type="date" id="dash-end" onchange="renderDashboard()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs outline-none focus:ring-1 focus:ring-blue-500">
+        </div>
+        <div class="flex justify-end"><button onclick="clearDashFilter()" class="text-[11px] text-red-500 hover:underline">ล้างตัวกรองแดชบอร์ด</button></div>
+      </div>
+
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-        <h4 class="text-sm font-bold text-slate-600 mb-3 flex items-center gap-1">📈 กราฟแนวโน้มทางการเงิน (บาท)</h4>
+        <h4 class="text-sm font-bold text-slate-600 mb-3">📈 กราฟแนวโน้มทางการเงิน (บาท)</h4>
         <div class="w-full h-64">
           <canvas id="trendChart"></canvas>
         </div>
@@ -122,7 +125,7 @@
 
     let currentUser = "";
     let myChart = null;
-    let cacheData = []; // เก็บข้อมูลดิบทั้งหมดเพื่อใช้ Filter ในฝั่ง Client แบบเร็วๆ ไม่ต้องโหลดเซิร์ฟเวอร์ใหม่
+    let cacheData = []; 
     
     window.onload = function() {
       liff.init({ liffId: LIFF_ID })
@@ -159,14 +162,15 @@
             btnForm.className = "flex flex-col items-center gap-1 text-blue-600 font-bold";
             btnDash.className = "flex flex-col items-center gap-1 text-slate-400 font-medium";
             title.innerText = "📝 บันทึกรายการ";
+            renderHistory(); // อัปเดตเฉพาะประวัติหน้าแรก
         } else if (target === 'dashboard') {
             formTab.classList.add('hidden');
             dashTab.classList.remove('hidden');
             btnForm.className = "flex flex-col items-center gap-1 text-slate-400 font-medium";
             btnDash.className = "flex flex-col items-center gap-1 text-blue-600 font-bold";
             title.innerText = "📊 แดชบอร์ดสรุปผล";
+            renderDashboard(); // อัปเดตเฉพาะกราฟและแดชบอร์ดหน้าสอง
         }
-        renderSystem(); // สลับหน้าแล้วให้วาด UI หน้าปัจจุบันตาม Filter ล่าสุดทันที
     }
 
     function lineLogin() { if (!liff.isLoggedIn()) { liff.login(); } }
@@ -222,23 +226,20 @@
           document.getElementById('note').value = '';
           btn.innerText = "บันทึกข้อมูล";
           alert("🎉 บันทึกข้อมูลสำเร็จแล้ว!");
-          fetchRawData(); // โหลดข้อมูลดิบใหม่จากสเปรดชีตหลังบันทึก
+          fetchRawData();
       })
       .catch(err => { alert("บันทึกไม่สำเร็จ"); btn.innerText = "บันทึกข้อมูล"; });
     }
 
-    // แปลงรูปแบบวันที่จากคอลัมน์ A (Google Sheets) ให้กลายเป็น Object Date ของ JavaScript เพื่อใช้เปรียบเทียบคำนวณช่วงเวลาได้แม่นยำ
     function convertToJSDate(dateStr) {
         try {
             if(!dateStr) return null;
             let cleanStr = dateStr.replace(/["']/g, '').trim();
-            // กรณีเป็น dd/mm/yyyy
             if(cleanStr.includes('/')) {
                 let parts = cleanStr.split('/');
                 let day = parseInt(parts[0], 10);
                 let month = parseInt(parts[1], 10) - 1;
                 let year = parseInt(parts[2].split(',')[0].trim(), 10);
-                // จัดการปี พ.ศ. ให้เป็น ค.ศ.
                 if(year > 2400) year -= 543; 
                 return new Date(year, month, day);
             }
@@ -254,126 +255,132 @@
         return thaiMonths[jsDate.getMonth()] + " " + (jsDate.getFullYear() + 543);
     }
 
-    // ฟังก์ชันดึงข้อมูลรอบเดียวมาเก็บใน Cache เพื่อความรวดเร็วในการฟิวเตอร์
     function fetchRawData() {
         fetch(`${API_URL}?action=getTransactions&username=${encodeURIComponent(currentUser)}`)
         .then(res => res.json())
         .then(response => {
             cacheData = response.data || [];
-            renderSystem();
+            renderHistory();
+            renderDashboard();
         }).catch(err => { console.error(err); });
     }
 
-    // สั่งคำนวณอัปเดต UI เมื่อมีการกดเลือกฟิวเตอร์วันที่
-    function applyFilter() {
-        renderSystem();
+    // ==========================================
+    // ⚙️ ฟังก์ชันทำงานของหน้าแรก: ประวัติรายการเข้า-ออก
+    // ==========================================
+    function clearHistoryFilter() {
+        document.getElementById('history-start').value = '';
+        document.getElementById('history-end').value = '';
+        renderHistory();
     }
 
-    // ล้างช่วงวันที่และเซ็ตกลับมาโชว์ทั้งหมด
-    function clearFilter() {
-        document.getElementById('filter-start').value = '';
-        document.getElementById('filter-end').value = '';
-        renderSystem();
-    }
-
-    // ฟังก์ชันหลักในการกรองข้อมูลประมวลผลวาดประวัติและแดชบอร์ดตามเงื่อนไขตัวกรอง
-    function renderSystem() {
-        let sumDiv = document.getElementById('summary');
+    function renderHistory() {
         let historyDiv = document.getElementById('history-list');
         let countSpan = document.getElementById('history-count');
+        
+        let startVal = document.getElementById('history-start').value;
+        let endVal = document.getElementById('history-end').value;
+        let startDate = startVal ? new Date(startVal).setHours(0,0,0,0) : null;
+        let endDate = endVal ? new Date(endVal).setHours(23,59,59,999) : null;
 
-        let filterStartVal = document.getElementById('filter-start').value;
-        let filterEndVal = document.getElementById('filter-end').value;
+        let filtered = [];
 
-        let startDate = filterStartVal ? new Date(filterStartVal) : null;
-        let endDate = filterEndVal ? new Date(filterEndVal) : null;
-        if(startDate) startDate.setHours(0,0,0,0);
-        if(endDate) endDate.setHours(23,59,59,999);
+        cacheData.forEach(row => {
+            let jsDate = convertToJSDate(row[0]);
+            let type = String(row[2] || '');
+            let cat = String(row[3] || '');
+            let amt = Number(row[4]) || 0;
+            let note = String(row[5] || '');
 
-        if(!cacheData || cacheData.length === 0) {
-            let emptyHTML = '<div class="text-center text-slate-400 py-6 text-xs">ยังไม่มีข้อมูลในระบบ</div>';
-            sumDiv.innerHTML = emptyHTML;
-            historyDiv.innerHTML = emptyHTML;
-            countSpan.innerText = '0 รายการ';
+            if (amt <= 0 || type === '' || !jsDate) return;
+            if (startDate && jsDate.getTime() < startDate) return;
+            if (endDate && jsDate.getTime() > endDate) return;
+
+            filtered.push({
+                date: jsDate.toLocaleDateString('th-TH', {day:'numeric', month:'short', year:'2-digit'}),
+                type, cat, amt, note, timestamp: jsDate.getTime()
+            });
+        });
+
+        filtered.sort((a,b) => b.timestamp - a.timestamp);
+        countSpan.innerText = `${filtered.length} รายการ`;
+
+        if(filtered.length === 0) {
+            historyDiv.innerHTML = '<p class="text-center text-slate-400 text-xs py-6">ไม่พบรายการในช่วงเวลานี้</p>';
             return;
         }
 
+        let html = '';
+        filtered.forEach(t => {
+            let isInc = t.type.includes('รับ');
+            html += `
+                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl text-xs border border-slate-100">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-2.5 h-2.5 rounded-full ${isInc ? 'bg-emerald-500' : 'bg-red-500'}"></span>
+                        <div>
+                            <span class="font-bold text-slate-700 block">${t.cat} <span class="font-normal text-slate-400 text-[9px]">(${t.date})</span></span>
+                            ${t.note ? `<span class="text-[9px] text-slate-400 block italic mt-0.5">${t.note}</span>` : ''}
+                        </div>
+                    </div>
+                    <span class="${isInc ? 'text-emerald-600 font-bold bg-emerald-50' : 'text-red-500 font-bold bg-red-50'} px-2.5 py-1 rounded-lg text-xs">
+                        ${isInc ? '+' : '-'}${t.amt.toLocaleString()} ฿
+                    </span>
+                </div>`;
+        });
+        historyDiv.innerHTML = html;
+    }
+
+    // ==========================================
+    // ⚙️ ฟังก์ชันทำงานของหน้าสอง: แดชบอร์ดสรุปผล & กราฟ
+    // ==========================================
+    function clearDashFilter() {
+        document.getElementById('dash-start').value = '';
+        document.getElementById('dash-end').value = '';
+        renderDashboard();
+    }
+
+    function renderDashboard() {
+        let sumDiv = document.getElementById('summary');
+        let startVal = document.getElementById('dash-start').value;
+        let endVal = document.getElementById('dash-end').value;
+        let startDate = startVal ? new Date(startVal).setHours(0,0,0,0) : null;
+        let endDate = endVal ? new Date(endVal).setHours(23,59,59,999) : null;
+
         let monthlyData = {};
-        let filteredTransactions = [];
 
-        // วนลูปกรองข้อมูลทีละแถว
         cacheData.forEach(row => {
-            try {
-                let rawDateStr = String(row[0] || '');
-                let type = String(row[2] || '');
-                let cat = String(row[3] || '');
-                let amt = Number(row[4]) || 0;
-                let note = String(row[5] || '');
-                
-                if (amt <= 0 || type === '') return;
-                
-                let jsDate = convertToJSDate(rawDateStr);
-                if(!jsDate) return;
+            let jsDate = convertToJSDate(row[0]);
+            let type = String(row[2] || '');
+            let cat = String(row[3] || '');
+            let amt = Number(row[4]) || 0;
 
-                // 🔍 ตรวจสอบเงื่อนไข Filter วันที่
-                if(startDate && jsDate < startDate) return;
-                if(endDate && jsDate > endDate) return;
+            if (amt <= 0 || type === '' || !jsDate) return;
+            if (startDate && jsDate.getTime() < startDate) return;
+            if (endDate && jsDate.getTime() > endDate) return;
 
-                let mY = parseThaiMonthFromDate(jsDate);
-                let dateDisplayStr = jsDate.toLocaleDateString('th-TH', {day:'numeric', month:'short', year:'2-digit'});
+            let mY = parseThaiMonthFromDate(jsDate);
 
-                if (!monthlyData[mY]) {
-                    monthlyData[mY] = { incomeTotal: 0, expenseTotal: 0, categories: {} };
-                }
-                
-                if (type.includes('รับ')) {
-                    monthlyData[mY].incomeTotal += amt;
-                    if (!monthlyData[mY].categories[cat]) monthlyData[mY].categories[cat] = 0;
-                    monthlyData[mY].categories[cat] += amt;
-                } else if (type.includes('จ่าย')) {
-                    monthlyData[mY].expenseTotal += amt;
-                }
-                
-                filteredTransactions.push({ date: dateDisplayStr, type, cat, amt, note, mY, rawTimestamp: jsDate.getTime() });
-            } catch(e) { }
+            if (!monthlyData[mY]) {
+                monthlyData[mY] = { incomeTotal: 0, expenseTotal: 0, categories: {} };
+            }
+            
+            if (type.includes('รับ')) {
+                monthlyData[mY].incomeTotal += amt;
+                if (!monthlyData[mY].categories[cat]) monthlyData[mY].categories[cat] = 0;
+                monthlyData[mY].categories[cat] += amt;
+            } else if (type.includes('จ่าย')) {
+                monthlyData[mY].expenseTotal += amt;
+            }
         });
 
-        // เรียงลำดับประวัติรายการเข้าออกตามเวลาล่าสุดอยู่ด้านบน
-        filteredTransactions.sort((a,b) => b.rawTimestamp - a.rawTimestamp);
-        countSpan.innerText = `${filteredTransactions.length} รายการ`;
-
-        // 🕒 1. แสดงผลกล่องรายละเอียดประวัติหน้าแรก (ยึดตามผลลัพธ์ที่ผ่าน Filter)
-        if(filteredTransactions.length === 0) {
-            historyDiv.innerHTML = '<p class="text-center text-slate-400 text-xs py-6">ไม่พบรายการในช่วงเวลาที่เลือก</p>';
-        } else {
-            let historyHTML = '';
-            filteredTransactions.forEach(t => {
-                let isInc = t.type.includes('รับ');
-                historyHTML += `
-                    <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl text-xs border border-slate-100">
-                        <div class="flex items-center gap-2.5">
-                            <span class="w-2.5 h-2.5 rounded-full ${isInc ? 'bg-emerald-500' : 'bg-red-500'}"></span>
-                            <div>
-                                <span class="font-bold text-slate-700 block">${t.cat} <span class="font-normal text-slate-400 text-[9px]">(${t.date})</span></span>
-                                ${t.note ? `<span class="text-[9px] text-slate-400 block italic mt-0.5">${t.note}</span>` : ''}
-                            </div>
-                        </div>
-                        <span class="${isInc ? 'text-emerald-600 font-bold bg-emerald-50' : 'text-red-500 font-bold bg-red-50'} px-2.5 py-1 rounded-lg text-xs">
-                            ${isInc ? '+' : '-'}${t.amt.toLocaleString()} ฿
-                        </span>
-                    </div>`;
-            });
-            historyDiv.innerHTML = historyHTML;
-        }
-
-        // 📊 2. วาดกราฟเปรียบเทียบแนวโน้มสำหรับหน้าแดชบอร์ดตาม Filter
         let months = Object.keys(monthlyData);
         if(months.length === 0) {
-            sumDiv.innerHTML = '<p class="text-center text-slate-400 text-xs py-6">ไม่มีข้อมูลรายงานในแดชบอร์ดสำหรับช่วงเวลานี้</p>';
+            sumDiv.innerHTML = '<p class="text-center text-slate-400 text-xs py-6">ไม่มีข้อมูลสำหรับช่วงเวลานี้</p>';
             if(myChart) { myChart.destroy(); myChart = null; }
             return;
         }
 
+        // วาดกราฟเส้น
         let chartLabels = [...months].reverse();
         let incomeDataset = chartLabels.map(m => monthlyData[m].incomeTotal);
         let expenseDataset = chartLabels.map(m => monthlyData[m].expenseTotal);
@@ -391,14 +398,14 @@
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
         });
 
-        // 📂 3. สร้างการ์ดแสดงผลแดชบอร์ดประมวลสัดส่วนแยกรายเดือน
-        let dashboardHTML = '';
+        // วาดการ์ดแดชบอร์ด
+        let html = '';
         months.forEach(m => {
             let incTotal = monthlyData[m].incomeTotal;
             let expTotal = monthlyData[m].expenseTotal;
             let netProfit = incTotal - expTotal;
 
-            dashboardHTML += `
+            html += `
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
                 <div class="font-extrabold text-blue-600 mb-3 pb-2 border-b border-slate-100 text-base flex justify-between items-center">
                     <span>📅 รอบเดือน: ${m}</span>
@@ -424,12 +431,12 @@
 
             let cats = monthlyData[m].categories;
             if (Object.keys(cats).length === 0) {
-                dashboardHTML += `<p class="text-[11px] text-slate-400 text-center py-1">ไม่มีรายได้เข้ามาในเดือนนี้</p>`;
+                html += `<p class="text-[11px] text-slate-400 text-center py-1">ไม่มีรายได้เข้ามาในเดือนนี้</p>`;
             } else {
                 Object.keys(cats).forEach(cName => {
                     let cAmt = cats[cName];
                     let percent = ((cAmt / incTotal) * 100).toFixed(1);
-                    dashboardHTML += `
+                    html += `
                         <div>
                             <div class="flex justify-between text-[11px] text-slate-600 mb-0.5"><span>🎯 ${cName}</span><span class="font-bold">${cAmt.toLocaleString()} ฿ (${percent}%)</span></div>
                             <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden"><div class="bg-emerald-500 h-full" style="width: ${percent}%"></div></div>
@@ -437,12 +444,11 @@
                 });
             }
 
-            dashboardHTML += `   </div>
+            html += `   </div>
                 </div>
             </div>`;
         });
-        
-        sumDiv.innerHTML = dashboardHTML;
+        sumDiv.innerHTML = html;
     }
   </script>
 </body>
