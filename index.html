@@ -68,7 +68,7 @@
         </div>
       </div>
 
-      <div id="summary" class="space-y-4"></div>
+      <div id="summary" class="space-y-6"></div>
     </div>
 
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-xl z-50 py-2">
@@ -88,10 +88,10 @@
 
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbwjXVrTaCl5LX7nglWELqvRStIr_Mm943P8I1pemQGhLEAY38uRfYzn8kNnOsi1mjDRoA/exec";
-    const LIFF_ID = "2010449814-yzT2aeF3"; 
+    const LIFF_ID = "2010449814-yzT2aeF3";
 
     let currentUser = "";
-    let myChart = null; // ตัวแปรสำหรับเก็บออบเจกต์กราฟ
+    let myChart = null;
     
     window.onload = function() {
       liff.init({ liffId: LIFF_ID })
@@ -99,10 +99,10 @@
           document.getElementById('loadingPage').classList.add('hidden');
           if (liff.isLoggedIn()) {
             liff.getProfile().then(profile => {
-              currentUser = profile.displayName; 
+              currentUser = profile.displayName;
               document.getElementById('displayUser').innerText = "👤 " + currentUser;
-              document.getElementById('appPage').classList.remove('hidden'); 
-              loadSummary(); 
+              document.getElementById('appPage').classList.remove('hidden');
+              loadSummary();
             });
           } else {
             document.getElementById('loginPage').classList.remove('hidden');
@@ -115,7 +115,6 @@
         });
     };
 
-    // ฟังก์ชันสลับหน้าจอ (Tab Switcher)
     function switchTab(target) {
         const formTab = document.getElementById('tab-form');
         const dashTab = document.getElementById('tab-dashboard');
@@ -135,7 +134,7 @@
             btnForm.className = "flex flex-col items-center gap-1 text-slate-400 font-medium";
             btnDash.className = "flex flex-col items-center gap-1 text-blue-600 font-bold";
             title.innerText = "📊 แดชบอร์ดสรุปผล";
-            loadSummary(); // โหลดซ้ำเพื่ออัปเดตข้อมูลและวาดกราฟใหม่ทุกครั้งที่เปิดดู
+            loadSummary();
         }
     }
 
@@ -151,12 +150,12 @@
       fetch(`${API_URL}?action=checkLogin&username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}`)
       .then(res => res.json())
       .then(res => {
-        if(res.result) { 
-            currentUser = u; 
+        if(res.result) {
+            currentUser = u;
             document.getElementById('displayUser').innerText = "👤 " + u;
             document.getElementById('loginPage').classList.add('hidden');
             document.getElementById('appPage').classList.remove('hidden');
-            loadSummary(); 
+            loadSummary();
             document.getElementById('pass').value = '';
         } else {
             alert('ชื่อหรือรหัสผ่านผิด โปรดลองอีกครั้ง');
@@ -167,14 +166,14 @@
 
     function logout() {
       if(confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
-          if (liff.isLoggedIn()) { liff.logout(); window.location.reload(); } 
+          if (liff.isLoggedIn()) { liff.logout(); window.location.reload(); }
           else { window.location.reload(); }
       }
     }
 
     function save() {
-      let data = { 
-          user: currentUser, 
+      let data = {
+          user: currentUser,
           type: document.getElementById('type').value,
           category: document.getElementById('cat').value,
           amount: document.getElementById('amt').value,
@@ -186,7 +185,7 @@
 
       fetch(`${API_URL}?action=saveData&payload=${encodeURIComponent(JSON.stringify(data))}`)
       .then(res => res.json())
-      .then(() => { 
+      .then(() => {
           document.getElementById('cat').value = '';
           document.getElementById('amt').value = '';
           document.getElementById('note').value = '';
@@ -216,9 +215,10 @@
         return "มิถุนายน 2569";
     }
 
-    // ฟังก์ชันคำนวณแดชบอร์ดและวาดกราฟเส้นแนวโน้ม
     function loadSummary() {
         let sumDiv = document.getElementById('summary');
+        sumDiv.innerHTML = '<p class="text-center text-slate-500 py-4">⏳ กำลังประมวลผลประวัติรายการทั้งหมด...</p>';
+
         fetch(`${API_URL}?action=getTransactions&username=${encodeURIComponent(currentUser)}`)
         .then(res => res.json())
         .then(response => {
@@ -233,13 +233,13 @@
 
             data.forEach(row => {
                 try {
-                    let dateVal = String(row[0] || '');
+                    let dateVal = String(row[0] || '').split(',')[0];
                     let type = String(row[2] || '');
                     let cat = String(row[3] || '');
                     let amt = Number(row[4]) || 0;
                     let note = String(row[5] || '');
-                    if (amt <= 0 || type === '') return; 
-                    let mY = parseThaiMonth(dateVal);
+                    if (amt <= 0 || type === '') return;
+                    let mY = parseThaiMonth(row[0]);
 
                     if (!monthlyData[mY]) {
                         monthlyData[mY] = { incomeTotal: 0, expenseTotal: 0, categories: {} };
@@ -252,33 +252,34 @@
                     } else if (type.includes('จ่าย')) {
                         monthlyData[mY].expenseTotal += amt;
                     }
-                    allTransactions.unshift({ date: dateVal.split(',')[0], type, cat, amt, note, mY });
+                    
+                    // เก็บทุกรายการไว้เพื่อเอาไปวาดประวัติตัวเต็มด้านล่าง
+                    allTransactions.push({ date: dateVal, type, cat, amt, note, mY });
                 } catch(e) { }
             });
 
             let months = Object.keys(monthlyData);
             if(months.length === 0) return;
 
-            // 📊 1. ส่วนการประมวลผลวาดคลังกราฟ (Chart.js)
-            let chartLabels = [...months].reverse(); // เรียงจากเดือนเก่าไปเดือนใหม่
+            // 📊 1. วาดกราฟเปรียบเทียบแนวโน้ม (Chart.js)
+            let chartLabels = [...months].reverse();
             let incomeDataset = chartLabels.map(m => monthlyData[m].incomeTotal);
             let expenseDataset = chartLabels.map(m => monthlyData[m].expenseTotal);
 
-            if (myChart) { myChart.destroy(); } // ทำลายกราฟเก่าทิ้งก่อนวาดใหม่ป้องกันซ้อน
-            const ctx = document.getElementById('trendChart').getContext('2chart');
+            if (myChart) { myChart.destroy(); }
             myChart = new Chart(document.getElementById('trendChart'), {
                 type: 'line',
                 data: {
                     labels: chartLabels,
                     datasets: [
-                        { label: 'รายได้รวม', data: incomeDataset, borderColor: '#10B981', backgroundColor: '#10B98120', tension: 0.3, fill: true, borderWidth: 3 },
-                        { label: 'รายจ่ายรวม', data: expenseDataset, borderColor: '#EF4444', backgroundColor: '#EF444410', tension: 0.3, fill: true, borderWidth: 2 }
+                        { label: 'รายได้', data: incomeDataset, borderColor: '#10B981', backgroundColor: '#10B98115', tension: 0.3, fill: true, borderWidth: 3 },
+                        { label: 'รายจ่าย', data: expenseDataset, borderColor: '#EF4444', backgroundColor: '#EF444410', tension: 0.3, fill: true, borderWidth: 2 }
                     ]
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
             });
 
-            // 📂 2. ส่วนการเขียนข้อมูลแสดงการ์ดสรุปรายเดือนด้านล่างกราฟ
+            // 📂 2. สร้างโครงสร้าง HTML ผสม Dashboard และรายละเอียดประวัติแยกตามเดือน
             let html = '';
             months.forEach(m => {
                 let incTotal = monthlyData[m].incomeTotal;
@@ -287,35 +288,81 @@
 
                 html += `
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                    <div class="font-extrabold text-emerald-600 mb-3 pb-2 border-b border-emerald-100 text-base">📅 รอบเดือน: ${m}</div>
-                    <div class="bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-4 rounded-xl text-center mb-4">
-                        <span class="text-[11px] opacity-90 block">รายได้รวมเดือนนี้</span>
-                        <span class="text-2xl font-black">${incTotal.toLocaleString()} ฿</span>
+                    <div class="font-extrabold text-blue-600 mb-3 pb-2 border-b border-slate-100 text-base flex justify-between items-center">
+                        <span>📅 รอบเดือน: ${m}</span>
+                        <span class="${netProfit >= 0 ? 'text-emerald-600 bg-emerald-50' : 'text-red-500 bg-red-50'} text-xs px-2 py-0.5 rounded-md font-bold">
+                            เหลือสุทธิ: ${netProfit.toLocaleString()} ฿
+                        </span>
                     </div>
-                    <div class="mb-4 bg-slate-50 p-3 rounded-xl">
-                        <div class="text-xs font-bold text-slate-500 mb-2">📊 สัดส่วนรายได้</div>
+
+                    <div class="grid grid-cols-2 gap-2 mb-4">
+                        <div class="bg-emerald-50 p-2.5 rounded-xl text-center">
+                            <span class="text-[10px] text-emerald-600 font-bold block">รายได้รวม</span>
+                            <span class="text-sm font-black text-emerald-700">+${incTotal.toLocaleString()} ฿</span>
+                        </div>
+                        <div class="bg-red-50 p-2.5 rounded-xl text-center">
+                            <span class="text-[10px] text-red-600 font-bold block">รายจ่ายรวม</span>
+                            <span class="text-sm font-black text-red-700">-${expTotal.toLocaleString()} ฿</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div class="text-[11px] font-bold text-slate-500 mb-2">📊 สัดส่วนรายได้แยกตามประเภท</div>
                         <div class="space-y-2">`;
 
                 let cats = monthlyData[m].categories;
-                Object.keys(cats).forEach(cName => {
-                    let cAmt = cats[cName];
-                    let percent = ((cAmt / incTotal) * 100).toFixed(1);
+                if (Object.keys(cats).length === 0) {
+                    html += `<p class="text-[11px] text-slate-400 text-center py-1">ไม่มีรายได้เข้ามาในเดือนนี้</p>`;
+                } else {
+                    Object.keys(cats).forEach(cName => {
+                        let cAmt = cats[cName];
+                        let percent = ((cAmt / incTotal) * 100).toFixed(1);
+                        html += `
+                            <div>
+                                <div class="flex justify-between text-[11px] text-slate-600 mb-0.5"><span>🎯 ${cName}</span><span class="font-bold">${cAmt.toLocaleString()} ฿ (${percent}%)</span></div>
+                                <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden"><div class="bg-emerald-500 h-full" style="width: ${percent}%"></div></div>
+                            </div>`;
+                    });
+                }
+
+                html += `   </div>
+                    </div>
+
+                    <div>
+                        <div class="text-[11px] font-bold text-slate-400 mb-2 uppercase tracking-wider">🕒 รายละเอียดประวัติรายการเข้า - ออก</div>
+                        <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">`;
+
+                // วนลูปกรองแสดงรายการทั้งหมดของเดือนนี้ (เรียงล่าสุดอยู่บน)
+                let currentMonthItems = allTransactions.filter(t => t.mY === m);
+                
+                currentMonthItems.forEach(t => {
+                    let isInc = t.type.includes('รับ');
                     html += `
-                        <div>
-                            <div class="flex justify-between text-xs text-slate-700 mb-0.5"><span>🎯 ${cName}</span><span>${cAmt.toLocaleString()} ฿ (${percent}%)</span></div>
-                            <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden"><div class="bg-emerald-500 h-full" style="width: ${percent}%"></div></div>
+                        <div class="flex justify-between items-center bg-slate-50 p-2 rounded-xl text-xs border border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full ${isInc ? 'bg-emerald-500' : 'bg-red-500'}"></span>
+                                <div>
+                                    <span class="font-bold text-slate-700 block">${t.cat} <span class="font-normal text-slate-400 text-[9px]">(${t.date})</span></span>
+                                    ${t.note ? `<span class="text-[9px] text-slate-400 block italic">${t.note}</span>` : ''}
+                                </div>
+                            </div>
+                            <span class="${isInc ? 'text-emerald-600 font-bold bg-emerald-50' : 'text-red-500 font-bold bg-red-50'} px-2 py-0.5 rounded-md text-[11px]">
+                                ${isInc ? '+' : '-'}${t.amt.toLocaleString()} ฿
+                            </span>
                         </div>`;
                 });
 
-                html += ` </div></div>
-                    <div class="flex justify-between text-xs text-slate-500 font-medium pt-1">
-                        <span>📉 รายจ่ายรวม: <span class="text-red-500 font-semibold">-${expTotal.toLocaleString()} ฿</span></span>
-                        <span>💰 คงเหลือ: <span class="${netProfit >= 0 ? 'text-emerald-600' : 'text-red-500'} font-bold">${netProfit.toLocaleString()} ฿</span></span>
+                html += `       </div>
                     </div>
                 </div>`;
             });
+            
             sumDiv.innerHTML = html;
-        }).catch(err => { console.error(err); });
+        })
+        .catch(err => { 
+            console.error(err);
+            sumDiv.innerHTML = '<p class="text-center text-red-500 py-4">❌ โหลดรายละเอียดข้อมูลล้มเหลว</p>'; 
+        });
     }
   </script>
 </body>
