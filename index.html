@@ -95,7 +95,7 @@
       </div>
 
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-        <h4 class="text-sm font-bold text-slate-600 mb-3">📈 กราฟแนวโน้มทางการเงิน (บาท)</h4>
+        <h4 class="text-sm font-bold text-slate-600 mb-3">📈 กราฟแนวโน้มทางการเงินรายวัน (บาท)</h4>
         <div class="w-full h-64">
           <canvas id="trendChart"></canvas>
         </div>
@@ -162,14 +162,14 @@
             btnForm.className = "flex flex-col items-center gap-1 text-blue-600 font-bold";
             btnDash.className = "flex flex-col items-center gap-1 text-slate-400 font-medium";
             title.innerText = "📝 บันทึกรายการ";
-            renderHistory(); // อัปเดตเฉพาะประวัติหน้าแรก
+            renderHistory(); 
         } else if (target === 'dashboard') {
             formTab.classList.add('hidden');
             dashTab.classList.remove('hidden');
             btnForm.className = "flex flex-col items-center gap-1 text-slate-400 font-medium";
             btnDash.className = "flex flex-col items-center gap-1 text-blue-600 font-bold";
             title.innerText = "📊 แดชบอร์ดสรุปผล";
-            renderDashboard(); // อัปเดตเฉพาะกราฟและแดชบอร์ดหน้าสอง
+            renderDashboard(); 
         }
     }
 
@@ -266,7 +266,7 @@
     }
 
     // ==========================================
-    // ⚙️ ฟังก์ชันทำงานของหน้าแรก: ประวัติรายการเข้า-ออก
+    // ⚙️ หน้าที่ 1: จัดการประวัติรายการเข้า-ออก
     // ==========================================
     function clearHistoryFilter() {
         document.getElementById('history-start').value = '';
@@ -331,7 +331,7 @@
     }
 
     // ==========================================
-    // ⚙️ ฟังก์ชันทำงานของหน้าสอง: แดชบอร์ดสรุปผล & กราฟ
+    // ⚙️ หน้าที่ 2: จัดการแดชบอร์ดสรุปผลและกราฟ (แสดงแกน X แบบรายวัน)
     // ==========================================
     function clearDashFilter() {
         document.getElementById('dash-start').value = '';
@@ -347,6 +347,7 @@
         let endDate = endVal ? new Date(endVal).setHours(23,59,59,999) : null;
 
         let monthlyData = {};
+        let dailyChartData = {}; // สำหรับใช้รวมกลุ่มยอดเงินในแต่ละวันเจาะลึก
 
         cacheData.forEach(row => {
             let jsDate = convertToJSDate(row[0]);
@@ -358,32 +359,48 @@
             if (startDate && jsDate.getTime() < startDate) return;
             if (endDate && jsDate.getTime() > endDate) return;
 
-            let mY = parseThaiMonthFromDate(jsDate);
+            // 1. จัดกลุ่มสำหรับแกนกราฟรายวัน (คีย์ในรูปแบบ YYYY-MM-DD เพื่อเอาไว้เรียงลำดับ)
+            let yyyy = jsDate.getFullYear();
+            let mm = String(jsDate.getMonth() + 1).padStart(2, '0');
+            let dd = String(jsDate.getDate()).padStart(2, '0');
+            let dayKey = `${yyyy}-${mm}-${dd}`;
+            let dayDisplay = jsDate.toLocaleDateString('th-TH', {day:'numeric', month:'short'});
 
+            if (!dailyChartData[dayKey]) {
+                dailyChartData[dayKey] = { label: dayDisplay, income: 0, expense: 0 };
+            }
+
+            // 2. จัดกลุ่มรายเดือนสำหรับการ์ดสรุปผลยอดเงินด้านล่างข้อมูลกราฟ
+            let mY = parseThaiMonthFromDate(jsDate);
             if (!monthlyData[mY]) {
                 monthlyData[mY] = { incomeTotal: 0, expenseTotal: 0, categories: {} };
             }
             
             if (type.includes('รับ')) {
+                dailyChartData[dayKey].income += amt;
                 monthlyData[mY].incomeTotal += amt;
                 if (!monthlyData[mY].categories[cat]) monthlyData[mY].categories[cat] = 0;
                 monthlyData[mY].categories[cat] += amt;
             } else if (type.includes('จ่าย')) {
+                dailyChartData[dayKey].expense += amt;
                 monthlyData[mY].expenseTotal += amt;
             }
         });
 
         let months = Object.keys(monthlyData);
-        if(months.length === 0) {
+        let dayKeys = Object.keys(dailyChartData);
+
+        if(dayKeys.length === 0) {
             sumDiv.innerHTML = '<p class="text-center text-slate-400 text-xs py-6">ไม่มีข้อมูลสำหรับช่วงเวลานี้</p>';
             if(myChart) { myChart.destroy(); myChart = null; }
             return;
         }
 
-        // วาดกราฟเส้น
-        let chartLabels = [...months].reverse();
-        let incomeDataset = chartLabels.map(m => monthlyData[m].incomeTotal);
-        let expenseDataset = chartLabels.map(m => monthlyData[m].expenseTotal);
+        // 📊 เรียงลำดับวันที่จากเก่าไปใหม่ตามแกนเวลาเพื่อวาดกราฟแนวโน้มเส้นตรง
+        dayKeys.sort(); 
+        let chartLabels = dayKeys.map(k => dailyChartData[k].label);
+        let incomeDataset = dayKeys.map(k => dailyChartData[k].income);
+        let expenseDataset = dayKeys.map(k => dailyChartData[k].expense);
 
         if (myChart) { myChart.destroy(); }
         myChart = new Chart(document.getElementById('trendChart'), {
@@ -391,14 +408,21 @@
             data: {
                 labels: chartLabels,
                 datasets: [
-                    { label: 'รายได้', data: incomeDataset, borderColor: '#10B981', backgroundColor: '#10B98115', tension: 0.3, fill: true, borderWidth: 3 },
-                    { label: 'รายจ่าย', data: expenseDataset, borderColor: '#EF4444', backgroundColor: '#EF444410', tension: 0.3, fill: true, borderWidth: 2 }
+                    { label: 'รายได้', data: incomeDataset, borderColor: '#10B981', backgroundColor: '#10B98115', tension: 0.2, fill: true, borderWidth: 3 },
+                    { label: 'รายจ่าย', data: expenseDataset, borderColor: '#EF4444', backgroundColor: '#EF444410', tension: 0.2, fill: true, borderWidth: 2 }
                 ]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { legend: { position: 'top' } },
+                scales: {
+                    x: { grid: { display: false } }
+                }
+            }
         });
 
-        // วาดการ์ดแดชบอร์ด
+        // 📂 แสดงผลการ์ดสรุปภาพรวมรายเดือนที่อยู่ด้านล่างกราฟ
         let html = '';
         months.forEach(m => {
             let incTotal = monthlyData[m].incomeTotal;
