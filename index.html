@@ -49,11 +49,12 @@
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">✨ กรอกข้อมูลของคุณ</h3>
         <div class="grid grid-cols-2 gap-3 mb-3">
-          <select id="type" class="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
+          <select id="type" onchange="updateCategoryOptions()" class="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 font-medium">
             <option value="รายรับ">รายรับ 📈</option>
             <option value="รายจ่าย">รายจ่าย 📉</option>
           </select>
-          <input id="cat" placeholder="หมวดหมู่ (เช่น อาหาร, เงินเดือน)" class="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
+          <select id="cat" class="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 font-medium">
+            </select>
         </div>
         <div class="grid grid-cols-2 gap-3 mb-4">
           <input id="amt" type="number" placeholder="จำนวนเงิน" class="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
@@ -126,8 +127,28 @@
     let currentUser = "";
     let myChart = null;
     let cacheData = []; 
+
+    // รายการตัวเลือกหมวดหมู่ที่กำหนดไว้
+    const categoryMap = {
+        "รายรับ": [
+            "เงินเดือน / ค่าจ้าง (Salary / Wages)",
+            "ธุรกิจ / งานเสริม (Business / Freelance)",
+            "การลงทุน / ดอกเบี้ย (Investment / Interest)",
+            "รายรับอื่นๆ (Others)"
+        ],
+        "รายจ่าย": [
+            "อาหาร / เครื่องดื่ม (Food & Drinks)",
+            "เดินทาง / ค่าน้ำมัน (Transportation)",
+            "ที่อยู่อาศัย / ค่าน้ำไฟ (Housing & Utilities)",
+            "ช้อปปิ้ง / บันเทิง (Shopping & Entertainment)",
+            "ผ่อนรถ / หนี้สิน / ประกัน (Loans & Insurance)",
+            "สุขภาพ / ของใช้ส่วนตัว (Medical & Personal Care)",
+            "รายจ่ายอื่นๆ (Others)"
+        ]
+    };
     
     window.onload = function() {
+      updateCategoryOptions(); // ตั้งค่าเริ่มต้นให้ตัวเลือกหมวดหมู่
       liff.init({ liffId: LIFF_ID })
         .then(() => {
           document.getElementById('loadingPage').classList.add('hidden');
@@ -148,6 +169,15 @@
           document.getElementById('loginPage').classList.remove('hidden');
         });
     };
+
+    // ฟังก์ชันในการสลับและอัปเดตรายชื่อตัวเลือกหมวดหมู่ใน Dropdown
+    function updateCategoryOptions() {
+        const typeSelect = document.getElementById('type').value;
+        const catSelect = document.getElementById('cat');
+        const options = categoryMap[typeSelect] || [];
+        
+        catSelect.innerHTML = options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+    }
 
     function switchTab(target) {
         const formTab = document.getElementById('tab-form');
@@ -221,7 +251,6 @@
       fetch(`${API_URL}?action=saveData&payload=${encodeURIComponent(JSON.stringify(data))}`)
       .then(res => res.json())
       .then(() => {
-          document.getElementById('cat').value = '';
           document.getElementById('amt').value = '';
           document.getElementById('note').value = '';
           btn.innerText = "บันทึกข้อมูล";
@@ -331,7 +360,7 @@
     }
 
     // ==========================================
-    // ⚙️ หน้าที่ 2: จัดการแดชบอร์ดสรุปผลและกราฟ (แสดงแกน X แบบรายวัน)
+    // ⚙️ หน้าที่ 2: จัดการแดชบอร์ดสรุปผลและกราฟ
     // ==========================================
     function clearDashFilter() {
         document.getElementById('dash-start').value = '';
@@ -347,7 +376,7 @@
         let endDate = endVal ? new Date(endVal).setHours(23,59,59,999) : null;
 
         let monthlyData = {};
-        let dailyChartData = {}; // สำหรับใช้รวมกลุ่มยอดเงินในแต่ละวันเจาะลึก
+        let dailyChartData = {}; 
 
         cacheData.forEach(row => {
             let jsDate = convertToJSDate(row[0]);
@@ -359,7 +388,6 @@
             if (startDate && jsDate.getTime() < startDate) return;
             if (endDate && jsDate.getTime() > endDate) return;
 
-            // 1. จัดกลุ่มสำหรับแกนกราฟรายวัน (คีย์ในรูปแบบ YYYY-MM-DD เพื่อเอาไว้เรียงลำดับ)
             let yyyy = jsDate.getFullYear();
             let mm = String(jsDate.getMonth() + 1).padStart(2, '0');
             let dd = String(jsDate.getDate()).padStart(2, '0');
@@ -370,7 +398,6 @@
                 dailyChartData[dayKey] = { label: dayDisplay, income: 0, expense: 0 };
             }
 
-            // 2. จัดกลุ่มรายเดือนสำหรับการ์ดสรุปผลยอดเงินด้านล่างข้อมูลกราฟ
             let mY = parseThaiMonthFromDate(jsDate);
             if (!monthlyData[mY]) {
                 monthlyData[mY] = { incomeTotal: 0, expenseTotal: 0, categories: {} };
@@ -396,7 +423,6 @@
             return;
         }
 
-        // 📊 เรียงลำดับวันที่จากเก่าไปใหม่ตามแกนเวลาเพื่อวาดกราฟแนวโน้มเส้นตรง
         dayKeys.sort(); 
         let chartLabels = dayKeys.map(k => dailyChartData[k].label);
         let incomeDataset = dayKeys.map(k => dailyChartData[k].income);
@@ -416,13 +442,10 @@
                 responsive: true, 
                 maintainAspectRatio: false, 
                 plugins: { legend: { position: 'top' } },
-                scales: {
-                    x: { grid: { display: false } }
-                }
+                scales: { x: { grid: { display: false } } }
             }
         });
 
-        // 📂 แสดงผลการ์ดสรุปภาพรวมรายเดือนที่อยู่ด้านล่างกราฟ
         let html = '';
         months.forEach(m => {
             let incTotal = monthlyData[m].incomeTotal;
