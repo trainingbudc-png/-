@@ -4,32 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>รายรับ - รายจ่าย (LINE LIFF)</title>
-  <!-- เรียกใช้ Tailwind CSS และ Google Fonts เพื่อความสวยงาม -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <!-- สคริปต์เปิดใช้งานระบบเชื่อมต่อ LINE LIFF SDK -->
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style> body { font-family: 'Sarabun', sans-serif; } </style>
 </head>
-<body class="bg-slate-100 p-4 min-h-screen text-slate-800">
+<body class="bg-slate-100 min-h-screen text-slate-800 pb-24">
   
-  <!-- ======================================================= -->
-  <!-- 1. หน้าต่างโหลดข้อมูลระหว่างเช็กสิทธิ์ล็อกอินกับแอป LINE       -->
-  <!-- ======================================================= -->
   <div id="loadingPage" class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-sm mt-10 border border-slate-200 text-center text-slate-500">
     ⏳ กำลังเชื่อมต่อระบบบัญชีกับ LINE...
   </div>
 
-  <!-- ======================================================= -->
-  <!-- 2. หน้าล็อกอิน (แสดงกรณีที่เปิดนอกแอป LINE บนบราวเซอร์ปกติ)       -->
-  <!-- ======================================================= -->
-  <div id="loginPage" class="hidden max-w-md mx-auto bg-white p-8 rounded-2xl shadow-sm mt-10 border border-slate-200">
+  <div id="loginPage" class="hidden max-w-md mx-auto bg-white p-8 rounded-2xl shadow-sm mt-10 border border-slate-200 m-4">
     <h2 class="text-2xl font-bold mb-6 text-center text-blue-600">รายรับ - รายจ่าย</h2>
     <input id="user" placeholder="Username (เช่น 023)" class="w-full border border-slate-300 p-3 mb-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 transition">
     <input id="pass" type="password" placeholder="Password" class="w-full border border-slate-300 p-3 mb-6 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 transition">
     <button onclick="login()" id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-md">เข้าสู่ระบบ</button>
     
-    <!-- ปุ่มล็อกอินด้วย LINE เพิ่มพิเศษสำหรับใช้งานบนคอมพิวเตอร์ -->
     <div class="flex items-center my-4">
       <div class="flex-1 border-t border-slate-200"></div>
       <span class="px-3 text-slate-400 text-xs uppercase">หรือ</span>
@@ -41,60 +33,71 @@
     </button>
   </div>
 
-  <!-- ======================================================= -->
-  <!-- 3. หน้าต่างหลักสำหรับใช้งานบันทึกข้อมูลและดูสรุปยอด                -->
-  <!-- ======================================================= -->
-  <div id="appPage" class="hidden max-w-lg mx-auto mt-6">
-    <!-- ส่วนหัวแสดงสถานะ User -->
+  <div id="appPage" class="hidden max-w-lg mx-auto p-4">
     <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-      <h2 class="text-xl font-extrabold text-slate-800">รายรับ - รายจ่าย</h2>
+      <h2 id="pageTitle" class="text-xl font-extrabold text-slate-800">📝 บันทึกรายการ</h2>
       <div class="flex items-center gap-2">
         <span id="displayUser" class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">User</span>
-        <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-full text-sm font-medium transition-all shadow-sm">
-          ออกจากระบบ 🚪
+        <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-full text-sm font-medium transition-all shadow-sm">🚪</button>
+      </div>
+    </div>
+    
+    <div id="tab-form" class="space-y-4">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">✨ กรอกข้อมูลของคุณ</h3>
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <select id="type" class="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
+            <option value="รายรับ">รายรับ 📈</option>
+            <option value="รายจ่าย">รายจ่าย 📉</option>
+          </select>
+          <input id="cat" placeholder="หมวดหมู่ (เช่น อาหาร, เงินเดือน)" class="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <input id="amt" type="number" placeholder="จำนวนเงิน" class="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
+          <input id="note" placeholder="บันทึกช่วยจำ (ไม่บังคับ)" class="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
+        </div>
+        <button onclick="save()" id="saveBtn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl transition-all shadow-md">บันทึกข้อมูล</button>
+      </div>
+    </div>
+
+    <div id="tab-dashboard" class="hidden space-y-6">
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+        <h4 class="text-sm font-bold text-slate-600 mb-3 flex items-center gap-1">📈 กราฟแนวโน้มทางการเงิน (บาท)</h4>
+        <div class="w-full h-64">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+
+      <div id="summary" class="space-y-4"></div>
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-xl z-50 py-2">
+      <div class="max-w-lg mx-auto flex justify-around items-center">
+        <button onclick="switchTab('form')" id="btn-tab-form" class="flex flex-col items-center gap-1 text-blue-600 font-bold transition-all">
+          <span class="text-2xl">📝</span>
+          <span class="text-xs">บันทึกข้อมูล</span>
+        </button>
+        <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="flex flex-col items-center gap-1 text-slate-400 font-medium transition-all">
+          <span class="text-2xl">📊</span>
+          <span class="text-xs">แดชบอร์ด</span>
         </button>
       </div>
     </div>
-    
-    <!-- ฟอร์มกรอกรายการใหม่ -->
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6">
-      <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">📝 เพิ่มรายการใหม่</h3>
-      <div class="grid grid-cols-2 gap-3 mb-3">
-        <select id="type" class="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
-          <option value="รายรับ">รายรับ 📈</option>
-          <option value="รายจ่าย">รายจ่าย 📉</option>
-        </select>
-        <input id="cat" placeholder="หมวดหมู่ (เช่น อาหาร, เงินเดือน)" class="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
-      </div>
-      <div class="grid grid-cols-2 gap-3 mb-4">
-        <input id="amt" type="number" placeholder="จำนวนเงิน" class="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
-        <input id="note" placeholder="บันทึกช่วยจำ (ไม่บังคับ)" class="w-full border border-slate-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
-      </div>
-      <button onclick="save()" id="saveBtn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl transition-all shadow-md">บันทึกข้อมูล</button>
-    </div>
 
-    <!-- พื้นที่สำหรับแสดง แดชบอร์ดสรุปยอด -->
-    <div id="summary" class="space-y-4"></div>
   </div>
 
-  <!-- ======================================================= -->
-  <!-- 4. ส่วนคำสั่งควบคุมระบบการทำงาน (JavaScript)                   -->
-  <!-- ======================================================= -->
   <script>
-    // การตั้งค่าตัวแปร (ลิงก์ Google Apps Script และรหัส LINE LIFF ของคุณ)
-    const API_URL = "https://script.google.com/macros/s/AKfycbwjXVrTaCl5LX7nglWELqvRStIr_Mm943P8I1pemQGhLEAY38uRfYzn8kNnOsi1mjDRoA/exec"; 
+    const API_URL = "https://script.google.com/macros/s/AKfycbwjXVrTaCl5LX7nglWELqvRStIr_Mm943P8I1pemQGhLEAY38uRfYzn8kNnOsi1mjDRoA/exec";
     const LIFF_ID = "2010449814-yzT2aeF3"; 
 
     let currentUser = "";
+    let myChart = null; // ตัวแปรสำหรับเก็บออบเจกต์กราฟ
     
-    // ทำงานอัตโนมัติทันทีที่เปิดหน้าจอ เพื่อตรวจสอบสิทธิ์ LINE
     window.onload = function() {
       liff.init({ liffId: LIFF_ID })
         .then(() => {
           document.getElementById('loadingPage').classList.add('hidden');
-          
           if (liff.isLoggedIn()) {
-            // ถ้าอยู่ในระบบ LINE แล้วให้ดึงชื่อเล่นมาใช้เป็น Username อัตโนมัติ[cite: 1]
             liff.getProfile().then(profile => {
               currentUser = profile.displayName; 
               document.getElementById('displayUser').innerText = "👤 " + currentUser;
@@ -102,30 +105,46 @@
               loadSummary(); 
             });
           } else {
-            // ถ้าเปิดข้างนอกแอป ให้ถอยไปแสดงหน้าล็อกอินปกติ[cite: 1]
             document.getElementById('loginPage').classList.remove('hidden');
           }
         })
         .catch((err) => {
-          console.error("LIFF การเชื่อมต่อ LINE ล้มเหลว:", err);
+          console.error(err);
           document.getElementById('loadingPage').classList.add('hidden');
           document.getElementById('loginPage').classList.remove('hidden');
         });
     };
 
-    // ฟังก์ชันเปิดหน้าต่างล็อกอินของ LINE
-    function lineLogin() {
-      if (!liff.isLoggedIn()) {
-        liff.login();
-      }
+    // ฟังก์ชันสลับหน้าจอ (Tab Switcher)
+    function switchTab(target) {
+        const formTab = document.getElementById('tab-form');
+        const dashTab = document.getElementById('tab-dashboard');
+        const btnForm = document.getElementById('btn-tab-form');
+        const btnDash = document.getElementById('btn-tab-dashboard');
+        const title = document.getElementById('pageTitle');
+
+        if (target === 'form') {
+            formTab.classList.remove('hidden');
+            dashTab.classList.add('hidden');
+            btnForm.className = "flex flex-col items-center gap-1 text-blue-600 font-bold";
+            btnDash.className = "flex flex-col items-center gap-1 text-slate-400 font-medium";
+            title.innerText = "📝 บันทึกรายการ";
+        } else if (target === 'dashboard') {
+            formTab.classList.add('hidden');
+            dashTab.classList.remove('hidden');
+            btnForm.className = "flex flex-col items-center gap-1 text-slate-400 font-medium";
+            btnDash.className = "flex flex-col items-center gap-1 text-blue-600 font-bold";
+            title.innerText = "📊 แดชบอร์ดสรุปผล";
+            loadSummary(); // โหลดซ้ำเพื่ออัปเดตข้อมูลและวาดกราฟใหม่ทุกครั้งที่เปิดดู
+        }
     }
 
-    // ฟังก์ชันระบบล็อกอินแบบเดิม (กรณีล็อกอินด้วย Username/Password แมนนวล)
+    function lineLogin() { if (!liff.isLoggedIn()) { liff.login(); } }
+
     function login() {
       let u = document.getElementById('user').value;
       let p = document.getElementById('pass').value;
       if(!u || !p) return alert("กรุณากรอกข้อมูลให้ครบครับ");
-      
       let btn = document.getElementById('loginBtn');
       btn.innerText = "กำลังตรวจสอบ...";
       
@@ -135,54 +154,33 @@
         if(res.result) { 
             currentUser = u; 
             document.getElementById('displayUser').innerText = "👤 " + u;
-            document.getElementById('loginPage').classList.add('hidden'); 
-            document.getElementById('appPage').classList.remove('hidden'); 
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('appPage').classList.remove('hidden');
             loadSummary(); 
             document.getElementById('pass').value = '';
         } else {
             alert('ชื่อหรือรหัสผ่านผิด โปรดลองอีกครั้ง');
             btn.innerText = "เข้าสู่ระบบ";
         }
-      })
-      .catch(err => {
-         console.error(err);
-         alert("เกิดข้อผิดพลาดการเชื่อมต่อ API");
-         btn.innerText = "เข้าสู่ระบบ";
-      });
+      }).catch(err => { alert("เกิดข้อผิดพลาด"); btn.innerText = "เข้าสู่ระบบ"; });
     }
 
-    // ฟังก์ชันการออกจากระบบ (Logout)[cite: 1]
     function logout() {
       if(confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
-          if (liff.isLoggedIn()) {
-              liff.logout();
-              window.location.reload(); 
-          } else {
-              currentUser = "";
-              document.getElementById('user').value = '';
-              document.getElementById('pass').value = '';
-              document.getElementById('cat').value = '';
-              document.getElementById('amt').value = '';
-              document.getElementById('note').value = '';
-              document.getElementById('summary').innerHTML = '';
-              document.getElementById('appPage').classList.add('hidden');
-              document.getElementById('loginPage').classList.remove('hidden');
-              document.getElementById('loginBtn').innerText = "เข้าสู่ระบบ";
-          }
+          if (liff.isLoggedIn()) { liff.logout(); window.location.reload(); } 
+          else { window.location.reload(); }
       }
     }
 
-    // ฟังก์ชันส่งบันทึกข้อมูลรายรับรายจ่ายไปยัง Google Sheets[cite: 1]
     function save() {
       let data = { 
           user: currentUser, 
-          type: document.getElementById('type').value, 
-          category: document.getElementById('cat').value, 
-          amount: document.getElementById('amt').value, 
-          note: document.getElementById('note').value 
+          type: document.getElementById('type').value,
+          category: document.getElementById('cat').value,
+          amount: document.getElementById('amt').value,
+          note: document.getElementById('note').value
       };
       if(!data.category || !data.amount) return alert('กรุณากรอกหมวดหมู่และจำนวนเงินครับ');
-
       let btn = document.getElementById('saveBtn');
       btn.innerText = "กำลังบันทึก...";
 
@@ -193,25 +191,21 @@
           document.getElementById('amt').value = '';
           document.getElementById('note').value = '';
           btn.innerText = "บันทึกข้อมูล";
-          loadSummary(); 
+          alert("🎉 บันทึกข้อมูลสำเร็จแล้ว!");
       })
-      .catch(err => {
-          alert("บันทึกไม่สำเร็จ ลองอีกครั้ง");
-          btn.innerText = "บันทึกข้อมูล";
-      });
+      .catch(err => { alert("บันทึกไม่สำเร็จ"); btn.innerText = "บันทึกข้อมูล"; });
     }
 
-    // ฟังก์ชันแปลงรูปแบบวันที่เป็นเดือนภาษาไทยอย่างถูกต้อง
     function parseThaiMonth(dateStr) {
         try {
             if (!dateStr) return "ไม่ระบุเดือน";
-            let cleanStr = dateStr.replace(/["']/g, '').trim(); 
+            let cleanStr = dateStr.replace(/["']/g, '').trim();
             if (cleanStr.includes('/')) {
                 let parts = cleanStr.split('/');
                 if (parts.length >= 2) {
                     let monthIdx = parseInt(parts[1], 10) - 1;
                     let yearVal = parseInt(parts[2].split(',')[0].trim(), 10);
-                    if (yearVal < 2100) yearVal += 543; 
+                    if (yearVal < 2100) yearVal += 543;
                     const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
                     if (monthIdx >= 0 && monthIdx < 12) return thaiMonths[monthIdx] + " " + yearVal;
                 }
@@ -222,11 +216,9 @@
         return "มิถุนายน 2569";
     }
 
-    // ฟังก์ชันโหลดข้อมูลย้อนหลังมาจัดหมวดหมู่คำนวณแดชบอร์ด
+    // ฟังก์ชันคำนวณแดชบอร์ดและวาดกราฟเส้นแนวโน้ม
     function loadSummary() {
         let sumDiv = document.getElementById('summary');
-        sumDiv.innerHTML = '<p class="text-center text-slate-500 py-4">⏳ กำลังคำนวณสรุปยอด...</p>';
-
         fetch(`${API_URL}?action=getTransactions&username=${encodeURIComponent(currentUser)}`)
         .then(res => res.json())
         .then(response => {
@@ -249,73 +241,81 @@
                     if (amt <= 0 || type === '') return; 
                     let mY = parseThaiMonth(dateVal);
 
-                    if (!monthlyData[mY]) monthlyData[mY] = { income: 0, expense: 0 };
-                    if (type.includes('รับ')) monthlyData[mY].income += amt;
-                    if (type.includes('จ่าย')) monthlyData[mY].expense += amt;
+                    if (!monthlyData[mY]) {
+                        monthlyData[mY] = { incomeTotal: 0, expenseTotal: 0, categories: {} };
+                    }
+                    
+                    if (type.includes('รับ')) {
+                        monthlyData[mY].incomeTotal += amt;
+                        if (!monthlyData[mY].categories[cat]) monthlyData[mY].categories[cat] = 0;
+                        monthlyData[mY].categories[cat] += amt;
+                    } else if (type.includes('จ่าย')) {
+                        monthlyData[mY].expenseTotal += amt;
+                    }
                     allTransactions.unshift({ date: dateVal.split(',')[0], type, cat, amt, note, mY });
                 } catch(e) { }
             });
 
             let months = Object.keys(monthlyData);
-            if(months.length === 0) {
-                 sumDiv.innerHTML = '<div class="bg-white p-6 rounded-2xl text-center text-slate-400 border border-slate-200">ยังไม่มีข้อมูลยอดเงิน</div>';
-                 return;
-            }
+            if(months.length === 0) return;
 
-            let html = '<h3 class="text-lg font-bold text-slate-800 px-1 mb-2">📊 แดชบอร์ดสรุปรายเดือน</h3>';
+            // 📊 1. ส่วนการประมวลผลวาดคลังกราฟ (Chart.js)
+            let chartLabels = [...months].reverse(); // เรียงจากเดือนเก่าไปเดือนใหม่
+            let incomeDataset = chartLabels.map(m => monthlyData[m].incomeTotal);
+            let expenseDataset = chartLabels.map(m => monthlyData[m].expenseTotal);
+
+            if (myChart) { myChart.destroy(); } // ทำลายกราฟเก่าทิ้งก่อนวาดใหม่ป้องกันซ้อน
+            const ctx = document.getElementById('trendChart').getContext('2chart');
+            myChart = new Chart(document.getElementById('trendChart'), {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        { label: 'รายได้รวม', data: incomeDataset, borderColor: '#10B981', backgroundColor: '#10B98120', tension: 0.3, fill: true, borderWidth: 3 },
+                        { label: 'รายจ่ายรวม', data: expenseDataset, borderColor: '#EF4444', backgroundColor: '#EF444410', tension: 0.3, fill: true, borderWidth: 2 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
+            });
+
+            // 📂 2. ส่วนการเขียนข้อมูลแสดงการ์ดสรุปรายเดือนด้านล่างกราฟ
+            let html = '';
             months.forEach(m => {
-                let inc = monthlyData[m].income;
-                let exp = monthlyData[m].expense;
-                let net = inc - exp;
-                let netColor = net >= 0 ? 'text-emerald-600' : 'text-red-500';
-                let netBg = net >= 0 ? 'bg-emerald-50' : 'bg-red-50';
-                let netSign = net > 0 ? '+' : '';
+                let incTotal = monthlyData[m].incomeTotal;
+                let expTotal = monthlyData[m].expenseTotal;
+                let netProfit = incTotal - expTotal;
 
                 html += `
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 mb-6">
-                    <div class="font-bold text-blue-600 mb-4 pb-2 border-b border-slate-100 text-base">📅 รอบเดือน: ${m}</div>
-                    <div class="grid grid-cols-3 gap-2 mb-4">
-                        <div class="bg-emerald-50 p-3 rounded-xl text-center">
-                            <span class="text-xs text-emerald-600 font-medium block">รายรับรวม</span>
-                            <span class="text-sm font-bold text-emerald-700">${inc.toLocaleString()} ฿</span>
-                        </div>
-                        <div class="bg-red-50 p-3 rounded-xl text-center">
-                            <span class="text-xs text-red-600 font-medium block">รายจ่ายรวม</span>
-                            <span class="text-sm font-bold text-red-700">-${exp.toLocaleString()} ฿</span>
-                        </div>
-                        <div class="${netBg} p-3 rounded-xl text-center">
-                            <span class="text-xs ${netColor} font-medium block">คงเหลือ</span>
-                            <span class="text-sm font-bold ${netColor}">${netSign}${net.toLocaleString()} ฿</span>
-                        </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="font-extrabold text-emerald-600 mb-3 pb-2 border-b border-emerald-100 text-base">📅 รอบเดือน: ${m}</div>
+                    <div class="bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-4 rounded-xl text-center mb-4">
+                        <span class="text-[11px] opacity-90 block">รายได้รวมเดือนนี้</span>
+                        <span class="text-2xl font-black">${incTotal.toLocaleString()} ฿</span>
                     </div>
-                    <div class="mt-4">
-                        <div class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">รายการย้อนหลังในเดือนนี้</div>
-                        <div class="space-y-2 max-h-48 overflow-y-auto pr-1">`;
+                    <div class="mb-4 bg-slate-50 p-3 rounded-xl">
+                        <div class="text-xs font-bold text-slate-500 mb-2">📊 สัดส่วนรายได้</div>
+                        <div class="space-y-2">`;
 
-                allTransactions.forEach(t => {
-                    if(t.mY === m) {
-                        let isInc = t.type.includes('รับ');
-                        html += `
-                            <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl text-xs border border-slate-100">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full ${isInc ? 'bg-emerald-500' : 'bg-red-500'}"></span>
-                                    <div>
-                                        <span class="font-bold text-slate-700 block">${t.cat} <span class="font-normal text-slate-400 text-[10px]">(${t.date})</span></span>
-                                        ${t.note ? `<span class="text-[10px] text-slate-400 block italic">${t.note}</span>` : ''}
-                                    </div>
-                                </div>
-                                <span class="${isInc ? 'text-emerald-600 bg-emerald-100/50' : 'text-red-500 bg-red-100/50'} font-bold px-2 py-0.5 rounded-lg">${isInc ? '+' : '-'}${t.amt.toLocaleString()} ฿</span>
-                            </div>`;
-                    }
+                let cats = monthlyData[m].categories;
+                Object.keys(cats).forEach(cName => {
+                    let cAmt = cats[cName];
+                    let percent = ((cAmt / incTotal) * 100).toFixed(1);
+                    html += `
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-700 mb-0.5"><span>🎯 ${cName}</span><span>${cAmt.toLocaleString()} ฿ (${percent}%)</span></div>
+                            <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden"><div class="bg-emerald-500 h-full" style="width: ${percent}%"></div></div>
+                        </div>`;
                 });
 
-                html += `</div></div></div>`;
+                html += ` </div></div>
+                    <div class="flex justify-between text-xs text-slate-500 font-medium pt-1">
+                        <span>📉 รายจ่ายรวม: <span class="text-red-500 font-semibold">-${expTotal.toLocaleString()} ฿</span></span>
+                        <span>💰 คงเหลือ: <span class="${netProfit >= 0 ? 'text-emerald-600' : 'text-red-500'} font-bold">${netProfit.toLocaleString()} ฿</span></span>
+                    </div>
+                </div>`;
             });
             sumDiv.innerHTML = html;
-        })
-        .catch(err => { 
-            sumDiv.innerHTML = '<p class="text-center text-red-500 py-4">❌ โหลดข้อมูลล้มเหลว</p>'; 
-        });
+        }).catch(err => { console.error(err); });
     }
   </script>
 </body>
