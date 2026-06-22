@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>รายรับ - รายจ่าย (LINE LIFF)</title>
+  <title>รายรับ - รายจ่าย อัจฉริยะ (LINE LIFF)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -20,7 +20,7 @@
   
   <div id="loadingPage" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-50">
     <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
-    <p class="text-xs font-medium text-slate-400">กำลังเชื่อมต่อระบบบัญชี...</p>
+    <p class="text-xs font-medium text-slate-400">กำลังเชื่อมต่อระบบบัญชีอัจฉริยะ...</p>
   </div>
 
   <div id="loginPage" class="hidden max-w-md mx-auto pt-24 px-4">
@@ -90,12 +90,17 @@
           <span id="history-count" class="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">0 รายการ</span>
         </div>
         
-        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-xs space-y-2">
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-xs space-y-2.5">
           <div class="grid grid-cols-2 gap-3">
             <input type="date" id="history-start" onchange="renderHistory()" class="w-full bg-white border border-slate-200 p-2.5 rounded-xl text-[11px] font-medium text-slate-600 outline-none">
             <input type="date" id="history-end" onchange="renderHistory()" class="w-full bg-white border border-slate-200 p-2.5 rounded-xl text-[11px] font-medium text-slate-600 outline-none">
           </div>
-          <div class="flex justify-end"><button onclick="clearHistoryFilter()" class="text-[10px] text-rose-500 font-semibold hover:underline">ล้างตัวกรอง</button></div>
+          <div>
+            <select id="history-cat-filter" onchange="renderHistory()" class="w-full bg-white border border-slate-200 p-2.5 rounded-xl text-[11px] font-semibold text-slate-600 outline-none cursor-pointer">
+              <option value="ALL">🔍 แสดงทุกหมวดหมู่</option>
+            </select>
+          </div>
+          <div class="flex justify-end"><button onclick="clearHistoryFilter()" class="text-[10px] text-rose-500 font-semibold hover:underline">ล้างตัวกรองทั้งหมด</button></div>
         </div>
 
         <div id="history-list" class="space-y-2.5 max-h-[320px] overflow-y-auto pr-0.5">
@@ -106,12 +111,44 @@
 
     <div id="tab-dashboard" class="hidden space-y-4">
       
-      <div class="bg-white p-4 rounded-2xl border border-slate-100 custom-shadow space-y-2">
+      <div class="bg-white p-4 rounded-2xl border border-slate-100 custom-shadow space-y-2.5">
+        <div class="text-[11px] font-bold text-slate-400">🔍 ตัวกรองการวิเคราะห์และกราฟแนวโน้ม</div>
         <div class="grid grid-cols-2 gap-2">
-          <input type="date" id="dash-start" onchange="renderDashboard()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-[11px] font-medium text-slate-600 outline-none">
-          <input type="date" id="dash-end" onchange="renderDashboard()" class="w-full bg-slate-50 border border-slate-200 p-2 rounded-lg text-[11px] font-medium text-slate-600 outline-none">
+          <input type="date" id="dash-start" onchange="renderDashboard()" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-[11px] font-medium text-slate-600 outline-none">
+          <input type="date" id="dash-end" onchange="renderDashboard()" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-[11px] font-medium text-slate-600 outline-none">
+        </div>
+        <div>
+          <select id="dash-cat-filter" onchange="renderDashboard()" class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-[11px] font-semibold text-slate-600 outline-none cursor-pointer">
+            <option value="ALL">🔍 เจาะลึกรายหมวดหมู่: ทั้งหมด</option>
+          </select>
         </div>
         <div class="flex justify-end"><button onclick="clearDashFilter()" class="text-[10px] text-rose-500 hover:underline">ล้างตัวกรอง</button></div>
+      </div>
+
+      <div class="bg-gradient-to-br from-blue-600 to-indigo-700 p-5 rounded-2xl text-white custom-shadow space-y-3">
+        <h4 class="text-xs font-black tracking-wide flex items-center gap-1.5 opacity-90">
+          💡 ข้อมูลวิเคราะห์อัจฉริยะ (เดือนที่จ่าย มากสุด / น้อยสุด)
+        </h4>
+        <div class="bg-white/10 p-2.5 rounded-xl text-xs space-y-1.5">
+            <div class="flex items-center gap-2">
+                <span class="text-xs">👕</span>
+                <span class="font-medium">หมวดหมู่เป้าหมาย:</span>
+                <select id="insight-cat-select" onchange="calculateCategoryInsights()" class="bg-slate-900/40 border border-white/20 text-white font-bold rounded px-1.5 py-0.5 outline-none text-[11px] cursor-pointer">
+                    </select>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-xs pt-1">
+            <div class="bg-white/10 p-3 rounded-xl border border-white/5">
+                <span class="text-[10px] text-emerald-300 font-bold block mb-0.5">📉 เดือนที่จ่าย "น้อยสุด"</span>
+                <span id="insight-min-month" class="font-black text-white text-[13px] block">กำลังคำนวณ...</span>
+                <span id="insight-min-val" class="text-[10px] text-white/70">0 ฿</span>
+            </div>
+            <div class="bg-white/10 p-3 rounded-xl border border-white/5">
+                <span class="text-[10px] text-rose-300 font-bold block mb-0.5">📈 เดือนที่จ่าย "มากสุด"</span>
+                <span id="insight-max-month" class="font-black text-white text-[13px] block">กำลังคำนวณ...</span>
+                <span id="insight-max-val" class="text-[10px] text-white/70">0 ฿</span>
+            </div>
+        </div>
       </div>
 
       <div class="bg-white p-5 rounded-2xl border border-slate-100 custom-shadow">
@@ -158,7 +195,7 @@
         ],
         "รายจ่าย": [
             "อาหาร / เครื่องดื่ม (Food & Drinks)",
-            "เดินทาง / ค่านーんมัน (Transportation)",
+            "เดินทาง / ค่าน้ำมัน (Transportation)",
             "ที่อยู่อาศัย / ค่าน้ำไฟ (Housing & Utilities)",
             "ช้อปปิ้ง / บันเทิง (Shopping & Entertainment)",
             "ผ่อนรถ / หนี้สิน / ประกัน (Loans & Insurance)",
@@ -169,6 +206,7 @@
     
     window.onload = function() {
       updateCategoryOptions();
+      buildUniversalFilters(); // สร้างดร็อปดาวน์ตัวกรองหมวดหมู่ทั้งหมด
       liff.init({ liffId: LIFF_ID })
         .then(() => {
           document.getElementById('loadingPage').classList.add('hidden');
@@ -189,6 +227,32 @@
           document.getElementById('loginPage').classList.remove('hidden');
         });
     };
+
+    // ฟังก์ชันสร้างตัวเลือกหมวดหมู่ใน Dropdown ต่างๆ ให้ดึงข้อมูลชุดเดียวกันอัตโนมัติ
+    function buildUniversalFilters() {
+        const allCategories = [...categoryMap["รายรับ"], ...categoryMap["รายจ่าย"]];
+        
+        // 1. ตัวกรองในหน้าประวัติ
+        const histFilter = document.getElementById('history-cat-filter');
+        let histHtml = '<option value="ALL">🔍 แสดงทุกหมวดหมู่</option>';
+        allCategories.forEach(c => { histHtml += `<option value="${c}">${c}</option>`; });
+        histFilter.innerHTML = histHtml;
+
+        // 2. ตัวกรองในหน้าแดชบอร์ดกราฟ
+        const dashFilter = document.getElementById('dash-cat-filter');
+        let dashHtml = '<option value="ALL">🔍 เจาะลึกรายหมวดหมู่: ทั้งหมด</option>';
+        allCategories.forEach(c => { dashHtml += `<option value="${c}">${c}</option>`; });
+        dashFilter.innerHTML = dashHtml;
+
+        // 3. ตัวเลือกหมวดหมู่สำหรับวิเคราะห์ สูงสุด-ต่ำสุด
+        const insightSelect = document.getElementById('insight-cat-select');
+        let insightHtml = '';
+        categoryMap["รายจ่าย"].forEach(c => {
+            let clean = c.split('/')[0].trim();
+            insightHtml += `<option value="${c}">${clean}</option>`;
+        });
+        insightSelect.innerHTML = insightHtml;
+    }
 
     function updateCategoryOptions() {
         const typeSelect = document.getElementById('type').value;
@@ -315,15 +379,19 @@
     function clearHistoryFilter() {
         document.getElementById('history-start').value = '';
         document.getElementById('history-end').value = '';
+        document.getElementById('history-cat-filter').value = 'ALL';
         renderHistory();
     }
 
+    // ฟังก์ชันแสดงประวัติที่ลิงก์เชื่อมโยงกับตัวกรองหมวดหมู่ตัวใหม่
     function renderHistory() {
         let historyDiv = document.getElementById('history-list');
         let countSpan = document.getElementById('history-count');
         
         let startVal = document.getElementById('history-start').value;
         let endVal = document.getElementById('history-end').value;
+        let catFilterVal = document.getElementById('history-cat-filter').value;
+
         let startDate = startVal ? new Date(startVal).setHours(0,0,0,0) : null;
         let endDate = endVal ? new Date(endVal).setHours(23,59,59,999) : null;
 
@@ -339,6 +407,9 @@
             if (amt <= 0 || type === '' || !jsDate) return;
             if (startDate && jsDate.getTime() < startDate) return;
             if (endDate && jsDate.getTime() > endDate) return;
+            
+            // ตรวจสอบเงื่อนไขตัวกรองหมวดหมู่
+            if (catFilterVal !== 'ALL' && cat !== catFilterVal) return;
 
             filtered.push({
                 fullDate: row[0],
@@ -350,7 +421,7 @@
         countSpan.innerText = `${filtered.length} รายการ`;
 
         if(filtered.length === 0) {
-            historyDiv.innerHTML = '<p class="text-center text-slate-400 text-xs py-6">ไม่พบข้อมูลประวัติรายการ</p>';
+            historyDiv.innerHTML = '<p class="text-center text-slate-400 text-xs py-6">ไม่พบข้อมูลประวัติที่ระบุ</p>';
             return;
         }
 
@@ -359,7 +430,6 @@
             let isInc = t.type.includes('รับ');
             let displayCat = t.cat.split('/')[0].trim(); 
             
-            // ใช้โครงสร้าง flex-row ร่วมกับ justify-between และแยกฝั่งจำนวนเงินให้มีขนาดคงที่ (flex-shrink-0) เพื่อแก้ปัญหาตัวเลขเบียด
             html += `
                 <div class="flex items-center justify-between bg-white p-4 rounded-xl text-xs border border-slate-100 hover:bg-slate-50/80 transition-all gap-4">
                     <div class="flex items-center gap-3 min-w-0">
@@ -383,18 +453,66 @@
     function clearDashFilter() {
         document.getElementById('dash-start').value = '';
         document.getElementById('dash-end').value = '';
+        document.getElementById('dash-cat-filter').value = 'ALL';
         renderDashboard();
+    }
+
+    // ฟังก์ชันคำนวณขั้นสูง: ค้นหาเดือนที่มียอดใช้จ่าย สูงสุด และ ต่ำสุด ในแต่ละหมวดหมู่แบบฉลาด
+    function calculateCategoryInsights() {
+        const targetCat = document.getElementById('insight-cat-select').value;
+        let monthSummary = {};
+
+        cacheData.forEach(row => {
+            let jsDate = convertToJSDate(row[0]);
+            let type = String(row[2] || '');
+            let cat = String(row[3] || '');
+            let amt = Number(row[4]) || 0;
+
+            if (amt <= 0 || !jsDate || type.includes('รับ')) return;
+            if (cat === targetCat) {
+                let mY = parseThaiMonthFromDate(jsDate).replace("รอบเดือน: ", "");
+                if (!monthSummary[mY]) monthSummary[mY] = 0;
+                monthSummary[mY] += amt;
+            }
+        });
+
+        const months = Object.keys(monthSummary);
+        if (months.length === 0) {
+            document.getElementById('insight-min-month').innerText = "ไม่มีข้อมูล";
+            document.getElementById('insight-min-val').innerText = "0 ฿";
+            document.getElementById('insight-max-month').innerText = "ไม่มีข้อมูล";
+            document.getElementById('insight-max-val').innerText = "0 ฿";
+            return;
+        }
+
+        let maxMonth = months[0], minMonth = months[0];
+        let maxVal = monthSummary[maxMonth], minVal = monthSummary[minMonth];
+
+        months.forEach(m => {
+            if (monthSummary[m] > maxVal) { maxVal = monthSummary[m]; maxMonth = m; }
+            if (monthSummary[m] < minVal) { minVal = monthSummary[m]; minMonth = m; }
+        });
+
+        document.getElementById('insight-min-month').innerText = minMonth;
+        document.getElementById('insight-min-val').innerText = `${minVal.toLocaleString()} บาท`;
+        document.getElementById('insight-max-month').innerText = maxMonth;
+        document.getElementById('insight-max-val').innerText = `${maxVal.toLocaleString()} บาท`;
     }
 
     function renderDashboard() {
         let sumDiv = document.getElementById('summary');
         let startVal = document.getElementById('dash-start').value;
         let endVal = document.getElementById('dash-end').value;
+        let dashCatFilter = document.getElementById('dash-cat-filter').value;
+
         let startDate = startVal ? new Date(startVal).setHours(0,0,0,0) : null;
         let endDate = endVal ? new Date(endVal).setHours(23,59,59,999) : null;
 
         let monthlyData = {};
         let dailyChartData = {}; 
+
+        // เรียกฟังก์ชันคำนวณ Insight สูงสุดต่ำสุด
+        calculateCategoryInsights();
 
         cacheData.forEach(row => {
             let jsDate = convertToJSDate(row[0]);
@@ -405,6 +523,9 @@
             if (amt <= 0 || type === '' || !jsDate) return;
             if (startDate && jsDate.getTime() < startDate) return;
             if (endDate && jsDate.getTime() > endDate) return;
+            
+            // กรองตามหมวดหมู่ถ้าผู้ใช้เลือกเจาะจง
+            if (dashCatFilter !== 'ALL' && cat !== dashCatFilter) return;
 
             let yyyy = jsDate.getFullYear();
             let mm = String(jsDate.getMonth() + 1).padStart(2, '0');
@@ -438,7 +559,7 @@
         let dayKeys = Object.keys(dailyChartData);
 
         if(dayKeys.length === 0) {
-            sumDiv.innerHTML = '<p class="text-center text-slate-400 text-xs py-6">ไม่มีข้อมูลวิเคราะห์ในช่วงเวลานี้</p>';
+            sumDiv.innerHTML = '<p class="text-center text-slate-400 text-xs py-6">ไม่มีข้อมูลวิเคราะห์ในเงื่อนไขนี้</p>';
             if(myChart) { myChart.destroy(); myChart = null; }
             return;
         }
@@ -478,7 +599,7 @@
             html += `
             <div class="bg-white p-5 rounded-2xl border border-slate-100 custom-shadow space-y-4">
                 <div class="font-extrabold text-slate-800 text-sm pb-1.5 border-b border-slate-100 flex items-center gap-1">
-                    📅 ${m}
+                    📅 ${m} ${dashCatFilter !== 'ALL' ? `<span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md font-normal">เฉพาะหมวดหมู่</span>` : ''}
                 </div>
 
                 <div class="grid grid-cols-3 gap-2">
@@ -497,7 +618,7 @@
                 </div>
 
                 <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-100">
-                    <div class="text-[10px] font-extrabold text-slate-400 mb-2.5 tracking-wide uppercase">📊 สัดส่วนตามแต่ละหมวดหมู่</div>
+                    <div class="text-[10px] font-extrabold text-slate-400 mb-2.5 tracking-wide uppercase">📊 รายละเอียดตามหมวดหมู่ที่เลือก</div>
                     <div class="space-y-2.5">`;
 
             let cats = monthlyData[m].categories;
