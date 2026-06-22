@@ -50,7 +50,7 @@
     <div class="bg-white p-4 rounded-2xl border border-slate-100 flex justify-between items-center custom-shadow">
       <h2 id="pageTitle" class="text-base font-extrabold text-slate-800 tracking-tight flex items-center gap-2">📝 รายรับ - รายจ่าย</h2>
       <div class="flex items-center gap-2">
-        <span id="displayUser" class="bg-blue-50 text-blue-600 px-3 py-1 rounded-xl text-xs font-bold border border-blue-100/50">023</span>
+        <span id="displayUser" class="bg-blue-50 text-blue-600 px-3 py-1 rounded-xl text-xs font-bold border border-blue-100/50">...</span>
         <button onclick="logout()" class="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition-all border border-rose-100">ออกจากระบบ 🚪</button>
       </div>
     </div>
@@ -421,6 +421,8 @@
         let filtered = [];
 
         cacheData.forEach(row => {
+            if (!row || row.length < 5) return; 
+
             let jsDate = convertToJSDate(row[0]);
             let type = String(row[2] || '');
             let cat = String(row[3] || '');
@@ -439,3 +441,288 @@
         });
 
         filtered.sort((a,b) => b.timestamp - a.timestamp);
+        countSpan.innerText = `${filtered.length} รายการ`;
+
+        if(filtered.length === 0) {
+            historyDiv.innerHTML = '<p class="text-center text-slate-400 text-xs py-6">ไม่พบข้อมูลประวัติที่ระบุ</p>';
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(t => {
+            let isInc = t.type.includes('รับ');
+            let displayCat = t.cat.split('/')[0].trim(); 
+            
+            html += `
+                <div class="flex items-center justify-between bg-white p-4 rounded-xl text-xs border border-slate-100 hover:bg-slate-50/80 transition-all gap-4">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 ${isInc ? 'bg-emerald-500' : 'bg-rose-500'}"></span>
+                        <div class="min-w-0">
+                            <span class="font-extrabold text-slate-800 block text-[13px] truncate">${displayCat}</span>
+                            <span class="font-medium text-slate-400 text-[10px] block mt-0.5">${t.fullDate}</span>
+                            ${t.note ? `<span class="text-[10px] text-slate-400 block italic mt-1 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100 truncate">${t.note}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0 text-right">
+                        <span class="${isInc ? 'text-emerald-600 bg-emerald-50/70' : 'text-rose-500 bg-rose-50/70'} px-3 py-1.5 rounded-lg font-black text-[13px] tracking-wide inline-block">
+                            ${isInc ? '+' : '-'}${t.amt.toLocaleString()} ฿
+                        </span>
+                    </div>
+                </div>`;
+        });
+        historyDiv.innerHTML = html;
+    }
+
+    function clearDashFilter() {
+        document.getElementById('dash-start').value = '';
+        document.getElementById('dash-end').value = '';
+        document.getElementById('dash-cat-filter').value = 'ALL';
+        renderDashboard();
+    }
+
+    // ฟังก์ชันคำนวณสถิติยอดรวม มากที่สุด - น้อยที่สุด แบบปลอดภัย (ไม่ค้างแน่นอน)
+    function calculateGlobalAndCategoryInsights() {
+        let globalSummary = {}; 
+        let targetCat = document.getElementById('insight-cat-select').value;
+        let catSummary = {};
+
+        if (!cacheData || cacheData.length === 0) return;
+
+        cacheData.forEach(row => {
+            if (!row || row.length < 5) return; 
+
+            let jsDate = convertToJSDate(row[0]);
+            let type = String(row[2] || '').trim();
+            let cat = String(row[3] || '').trim();
+            let amt = Number(row[4]) || 0;
+
+            if (amt <= 0 || !jsDate || type === '') return;
+            
+            let mY = parseThaiMonthFromDate(jsDate).replace("รอบเดือน: ", "");
+            
+            if (!globalSummary[mY]) {
+                globalSummary[mY] = { income: 0, expense: 0 };
+            }
+            if (type.includes('รับ')) {
+                globalSummary[mY].income += amt;
+            } else if (type.includes('จ่าย')) {
+                globalSummary[mY].expense += amt;
+                
+                if (cat === targetCat) {
+                    if (!catSummary[mY]) catSummary[mY] = 0;
+                    catSummary[mY] += amt;
+                }
+            }
+        });
+
+        const months = Object.keys(globalSummary);
+        
+        if (months.length === 0) {
+            let defaultDash = "ไม่มีข้อมูล";
+            document.getElementById('global-max-inc-month').innerText = defaultDash;
+            document.getElementById('global-max-inc-val').innerText = "0 ฿";
+            document.getElementById('global-min-inc-month').innerText = defaultDash;
+            document.getElementById('global-min-inc-val').innerText = "0 ฿";
+            document.getElementById('global-max-exp-month').innerText = defaultDash;
+            document.getElementById('global-max-exp-val').innerText = "0 ฿";
+            document.getElementById('global-min-exp-month').innerText = defaultDash;
+            document.getElementById('global-min-exp-val').innerText = "0 ฿";
+        } else {
+            let maxIncM = months[0], minIncM = months[0];
+            let maxIncV = globalSummary[maxIncM].income, minIncV = globalSummary[minIncM].income;
+
+            let maxExpM = months[0], minExpM = months[0];
+            let maxExpV = globalSummary[maxExpM].expense, minExpV = globalSummary[minExpM].expense;
+
+            months.forEach(m => {
+                if (globalSummary[m].income > maxIncV) { maxIncV = globalSummary[m].income; maxIncM = m; }
+                if (globalSummary[m].income < minIncV) { minIncV = globalSummary[m].income; minIncM = m; }
+                if (globalSummary[m].expense > maxExpV) { maxExpV = globalSummary[m].expense; maxExpM = m; }
+                if (globalSummary[m].expense < minExpV) { minExpV = globalSummary[m].expense; minExpM = m; }
+            });
+
+            document.getElementById('global-max-inc-month').innerText = maxIncM;
+            document.getElementById('global-max-inc-val').innerText = `${maxIncV.toLocaleString()} ฿`;
+            document.getElementById('global-min-inc-month').innerText = minIncM;
+            document.getElementById('global-min-inc-val').innerText = `${minIncV.toLocaleString()} ฿`;
+
+            document.getElementById('global-max-exp-month').innerText = maxExpM;
+            document.getElementById('global-max-exp-val').innerText = `${maxExpV.toLocaleString()} ฿`;
+            document.getElementById('global-min-exp-month').innerText = minExpM;
+            document.getElementById('global-min-exp-val').innerText = `${minExpV.toLocaleString()} ฿`;
+        }
+
+        const catMonths = Object.keys(catSummary);
+        if (catMonths.length === 0) {
+            document.getElementById('insight-min-month').innerText = "ไม่มีข้อมูล";
+            document.getElementById('insight-min-val').innerText = "0 ฿";
+            document.getElementById('insight-max-month').innerText = "ไม่มีข้อมูล";
+            document.getElementById('insight-max-val').innerText = "0 ฿";
+            return;
+        }
+        let maxCatM = catMonths[0], minCatM = catMonths[0];
+        let maxCatV = catSummary[maxCatM], minCatV = catSummary[minCatM];
+        catMonths.forEach(m => {
+            if (catSummary[m] > maxCatV) { maxCatV = catSummary[m]; maxCatM = m; }
+            if (catSummary[m] < minCatV) { minCatV = catSummary[m]; minCatM = m; }
+        });
+        document.getElementById('insight-min-month').innerText = minCatM;
+        document.getElementById('insight-min-val').innerText = `${minCatV.toLocaleString()} ฿`;
+        document.getElementById('insight-max-month').innerText = maxCatM;
+        document.getElementById('insight-max-val').innerText = `${maxCatV.toLocaleString()} ฿`;
+    }
+
+    function calculateCategoryInsights() {
+        calculateGlobalAndCategoryInsights();
+    }
+
+    function renderDashboard() {
+        let sumDiv = document.getElementById('summary');
+        let startVal = document.getElementById('dash-start').value;
+        let endVal = document.getElementById('dash-end').value;
+        let dashCatFilter = document.getElementById('dash-cat-filter').value;
+
+        let startDate = startVal ? new Date(startVal).setHours(0,0,0,0) : null;
+        let endDate = endVal ? new Date(endVal).setHours(23,59,59,999) : null;
+
+        let monthlyData = {};
+        let dailyChartData = {}; 
+
+        calculateGlobalAndCategoryInsights();
+
+        cacheData.forEach(row => {
+            if (!row || row.length < 4) return;
+
+            let jsDate = convertToJSDate(row[0]);
+            let type = String(row[2] || '');
+            let cat = String(row[3] || '');
+            let amt = Number(row[4]) || 0;
+
+            if (amt <= 0 || type === '' || !jsDate) return;
+            if (startDate && jsDate.getTime() < startDate) return;
+            if (endDate && jsDate.getTime() > endDate) return;
+            if (dashCatFilter !== 'ALL' && cat !== dashCatFilter) return;
+
+            let yyyy = jsDate.getFullYear();
+            let mm = String(jsDate.getMonth() + 1).padStart(2, '0');
+            let dd = String(jsDate.getDate()).padStart(2, '0');
+            let dayKey = `${yyyy}-${mm}-${dd}`;
+            let dayDisplay = jsDate.toLocaleDateString('th-TH', {day:'numeric', month:'short'});
+
+            if (!dailyChartData[dayKey]) {
+                dailyChartData[dayKey] = { label: dayDisplay, income: 0, expense: 0 };
+            }
+
+            let mY = parseThaiMonthFromDate(jsDate);
+            if (!monthlyData[mY]) {
+                monthlyData[mY] = { incomeTotal: 0, expenseTotal: 0, categories: {} };
+            }
+            
+            if (type.includes('รับ')) {
+                dailyChartData[dayKey].income += amt;
+                monthlyData[mY].incomeTotal += amt;
+                if (!monthlyData[mY].categories[cat]) monthlyData[mY].categories[cat] = 0;
+                monthlyData[mY].categories[cat] += amt;
+            } else if (type.includes('จ่าย')) {
+                dailyChartData[dayKey].expense += amt;
+                monthlyData[mY].expenseTotal += amt;
+                if (!monthlyData[mY].categories[cat]) monthlyData[mY].categories[cat] = 0;
+                monthlyData[mY].categories[cat] += amt;
+            }
+        });
+
+        let months = Object.keys(monthlyData);
+        let dayKeys = Object.keys(dailyChartData);
+
+        if(dayKeys.length === 0) {
+            sumDiv.innerHTML = '<p class="text-center text-slate-400 text-xs py-6">ไม่มีข้อมูลวิเคราะห์ในเงื่อนไขนี้</p>';
+            if(myChart) { myChart.destroy(); myChart = null; }
+            return;
+        }
+
+        dayKeys.sort(); 
+        let chartLabels = dayKeys.map(k => dailyChartData[k].label);
+        let incomeDataset = dayKeys.map(k => dailyChartData[k].income);
+        let expenseDataset = dayKeys.map(k => dailyChartData[k].expense);
+
+        if (myChart) { myChart.destroy(); }
+        myChart = new Chart(document.getElementById('trendChart'), {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [
+                    { label: 'รายได้', data: incomeDataset, borderColor: '#10b981', backgroundColor: '#10b98108', tension: 0.15, fill: true, borderWidth: 3, pointBackgroundColor: '#10b981' },
+                    { label: 'รายจ่าย', data: expenseDataset, borderColor: '#ef4444', backgroundColor: '#ef444404', tension: 0.15, fill: true, borderWidth: 2.5, pointBackgroundColor: '#ef4444' }
+                ]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { legend: { labels: { font: { family: 'Sarabun', size: 11, weight: '500' } } } },
+                scales: { 
+                    x: { grid: { display: false }, ticks: { font: { family: 'Sarabun', size: 10 } } },
+                    y: { ticks: { font: { family: 'Sarabun', size: 10 } } }
+                }
+            }
+        });
+
+        let html = '';
+        months.forEach(m => {
+            let incTotal = monthlyData[m].incomeTotal;
+            let expTotal = monthlyData[m].expenseTotal;
+            let netProfit = incTotal - expTotal;
+
+            html += `
+            <div class="bg-white p-5 rounded-2xl border border-slate-100 custom-shadow space-y-4">
+                <div class="font-extrabold text-slate-800 text-sm pb-1.5 border-b border-slate-100 flex items-center gap-1">
+                    📅 ${m} ${dashCatFilter !== 'ALL' ? `<span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md font-normal">เฉพาะหมวดหมู่</span>` : ''}
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-emerald-50/60 p-2.5 rounded-xl border border-emerald-100 text-center">
+                        <span class="text-[10px] text-emerald-600 font-bold block mb-0.5">รายรับรวม</span>
+                        <span class="text-xs font-black text-emerald-700">${incTotal.toLocaleString()} ฿</span>
+                    </div>
+                    <div class="bg-rose-50/60 p-2.5 rounded-xl border border-rose-100 text-center">
+                        <span class="text-[10px] text-rose-500 font-bold block mb-0.5">รายจ่ายรวม</span>
+                        <span class="text-xs font-black text-rose-700">-${expTotal.toLocaleString()} ฿</span>
+                    </div>
+                    <div class="bg-teal-50/60 p-2.5 rounded-xl border border-teal-100 text-center">
+                        <span class="text-[10px] text-teal-600 font-bold block mb-0.5">คงเหลือ</span>
+                        <span class="text-xs font-black text-teal-700">${netProfit >= 0 ? '+' : ''}${netProfit.toLocaleString()} ฿</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50/80 p-3.5 rounded-xl border border-slate-100">
+                    <div class="text-[10px] font-extrabold text-slate-400 mb-2.5 tracking-wide uppercase">📊 รายละเอียดตามหมวดหมู่ที่เลือก</div>
+                    <div class="space-y-2.5">`;
+
+            let cats = monthlyData[m].categories;
+            Object.keys(cats).forEach(cName => {
+                let cAmt = cats[cName];
+                let isIncomeCat = categoryMap["รายรับ"].includes(cName);
+                let baseTotal = isIncomeCat ? incTotal : expTotal;
+                let percent = baseTotal > 0 ? ((cAmt / baseTotal) * 100).toFixed(1) : 0;
+                let cleanName = cName.split('/')[0].trim();
+
+                html += `
+                    <div>
+                        <div class="flex justify-between text-[11px] text-slate-600 mb-1">
+                            <span>${isIncomeCat ? '📈' : '📉'} ${cleanName}</span>
+                            <span class="font-bold text-slate-700">${cAmt.toLocaleString()} ฿ (${percent}%)</span>
+                        </div>
+                        <div class="w-full bg-slate-200 h-1 rounded-full overflow-hidden">
+                            <div class="${isIncomeCat ? 'bg-emerald-500' : 'bg-rose-500'} h-full rounded-full" style="width: ${percent}%"></div>
+                        </div>
+                    </div>`;
+            });
+
+            html += `   </div>
+                </div>
+            </div>`;
+        });
+        sumDiv.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
