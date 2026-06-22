@@ -58,6 +58,15 @@
         </div>
         <button onclick="save()" id="saveBtn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl transition-all shadow-md">บันทึกข้อมูล</button>
       </div>
+
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+        <div class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-1.5">
+          <span>🕒 รายละเอียดประวัติรายการเข้า - ออก</span>
+        </div>
+        <div id="history-list" class="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+          <p class="text-center text-slate-400 text-xs py-4">⏳ กำลังโหลดประวัติการบันทึกของคุณ...</p>
+        </div>
+      </div>
     </div>
 
     <div id="tab-dashboard" class="hidden space-y-6">
@@ -128,13 +137,14 @@
             btnForm.className = "flex flex-col items-center gap-1 text-blue-600 font-bold";
             btnDash.className = "flex flex-col items-center gap-1 text-slate-400 font-medium";
             title.innerText = "📝 บันทึกรายการ";
+            loadSummary(); // โหลดข้อมูลเพื่อให้ประวัติอัปเดตล่าสุด
         } else if (target === 'dashboard') {
             formTab.classList.add('hidden');
             dashTab.classList.remove('hidden');
             btnForm.className = "flex flex-col items-center gap-1 text-slate-400 font-medium";
             btnDash.className = "flex flex-col items-center gap-1 text-blue-600 font-bold";
             title.innerText = "📊 แดชบอร์ดสรุปผล";
-            loadSummary();
+            loadSummary(); // โหลดข้อมูลใหม่เพื่อวาดกราฟ
         }
     }
 
@@ -191,6 +201,7 @@
           document.getElementById('note').value = '';
           btn.innerText = "บันทึกข้อมูล";
           alert("🎉 บันทึกข้อมูลสำเร็จแล้ว!");
+          loadSummary(); // ดึงประวัติรายการมาอัปเดตที่หน้าแรกทันที
       })
       .catch(err => { alert("บันทึกไม่สำเร็จ"); btn.innerText = "บันทึกข้อมูล"; });
     }
@@ -217,7 +228,7 @@
 
     function loadSummary() {
         let sumDiv = document.getElementById('summary');
-        sumDiv.innerHTML = '<p class="text-center text-slate-500 py-4">⏳ กำลังประมวลผลประวัติรายการทั้งหมด...</p>';
+        let historyDiv = document.getElementById('history-list');
 
         fetch(`${API_URL}?action=getTransactions&username=${encodeURIComponent(currentUser)}`)
         .then(res => res.json())
@@ -227,7 +238,9 @@
             let allTransactions = [];
 
             if(!data || data.length === 0) {
-                sumDiv.innerHTML = '<div class="bg-white p-6 rounded-2xl text-center text-slate-400 border border-slate-200">ยังไม่มีข้อมูลบันทึกในระบบ</div>';
+                let emptyHTML = '<div class="text-center text-slate-400 py-6 text-xs">ยังไม่มีข้อมูลบันทึกในระบบ</div>';
+                sumDiv.innerHTML = emptyHTML;
+                historyDiv.innerHTML = emptyHTML;
                 return;
             }
 
@@ -253,15 +266,35 @@
                         monthlyData[mY].expenseTotal += amt;
                     }
                     
-                    // เก็บทุกรายการไว้เพื่อเอาไปวาดประวัติตัวเต็มด้านล่าง
-                    allTransactions.push({ date: dateVal, type, cat, amt, note, mY });
+                    // ใส่ข้อมูลเข้าอาร์เรย์ (เรียงจากใหม่สุดไปเก่าสุด)
+                    allTransactions.unshift({ date: dateVal, type, cat, amt, note, mY });
                 } catch(e) { }
             });
 
+            // 🕒 1. สร้าง HTML แสดงประวัติตัวเต็มสำหรับหน้าแรก (Tab 1)
+            let historyHTML = '';
+            allTransactions.forEach(t => {
+                let isInc = t.type.includes('รับ');
+                historyHTML += `
+                    <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl text-xs border border-slate-100 transition-all hover:bg-slate-100/50">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full ${isInc ? 'bg-emerald-500' : 'bg-red-500'}"></span>
+                            <div>
+                                <span class="font-bold text-slate-700 block">${t.cat} <span class="font-normal text-slate-400 text-[9px]">(${t.date})</span></span>
+                                ${t.note ? `<span class="text-[9px] text-slate-400 block italic mt-0.5">${t.note}</span>` : ''}
+                            </div>
+                        </div>
+                        <span class="${isInc ? 'text-emerald-600 font-bold bg-emerald-50' : 'text-red-500 font-bold bg-red-50'} px-2.5 py-1 rounded-lg text-xs">
+                            ${isInc ? '+' : '-'}${t.amt.toLocaleString()} ฿
+                        </span>
+                    </div>`;
+            });
+            historyDiv.innerHTML = historyHTML;
+
+            // 📊 2. วาดกราฟเปรียบเทียบแนวโน้มสำหรับหน้าแดชบอร์ด (Tab 2)
             let months = Object.keys(monthlyData);
             if(months.length === 0) return;
 
-            // 📊 1. วาดกราฟเปรียบเทียบแนวโน้ม (Chart.js)
             let chartLabels = [...months].reverse();
             let incomeDataset = chartLabels.map(m => monthlyData[m].incomeTotal);
             let expenseDataset = chartLabels.map(m => monthlyData[m].expenseTotal);
@@ -279,14 +312,14 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
             });
 
-            // 📂 2. สร้างโครงสร้าง HTML ผสม Dashboard และรายละเอียดประวัติแยกตามเดือน
-            let html = '';
+            // 📂 3. สร้างการ์ดข้อมูลสัดส่วนแยกรายเดือนสำหรับหน้าแดชบอร์ด (Tab 2)
+            let dashboardHTML = '';
             months.forEach(m => {
                 let incTotal = monthlyData[m].incomeTotal;
                 let expTotal = monthlyData[m].expenseTotal;
                 let netProfit = incTotal - expTotal;
 
-                html += `
+                dashboardHTML += `
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
                     <div class="font-extrabold text-blue-600 mb-3 pb-2 border-b border-slate-100 text-base flex justify-between items-center">
                         <span>📅 รอบเดือน: ${m}</span>
@@ -306,18 +339,18 @@
                         </div>
                     </div>
 
-                    <div class="mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
                         <div class="text-[11px] font-bold text-slate-500 mb-2">📊 สัดส่วนรายได้แยกตามประเภท</div>
                         <div class="space-y-2">`;
 
                 let cats = monthlyData[m].categories;
                 if (Object.keys(cats).length === 0) {
-                    html += `<p class="text-[11px] text-slate-400 text-center py-1">ไม่มีรายได้เข้ามาในเดือนนี้</p>`;
+                    dashboardHTML += `<p class="text-[11px] text-slate-400 text-center py-1">ไม่มีรายได้เข้ามาในเดือนนี้</p>`;
                 } else {
                     Object.keys(cats).forEach(cName => {
                         let cAmt = cats[cName];
                         let percent = ((cAmt / incTotal) * 100).toFixed(1);
-                        html += `
+                        dashboardHTML += `
                             <div>
                                 <div class="flex justify-between text-[11px] text-slate-600 mb-0.5"><span>🎯 ${cName}</span><span class="font-bold">${cAmt.toLocaleString()} ฿ (${percent}%)</span></div>
                                 <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden"><div class="bg-emerald-500 h-full" style="width: ${percent}%"></div></div>
@@ -325,43 +358,18 @@
                     });
                 }
 
-                html += `   </div>
-                    </div>
-
-                    <div>
-                        <div class="text-[11px] font-bold text-slate-400 mb-2 uppercase tracking-wider">🕒 รายละเอียดประวัติรายการเข้า - ออก</div>
-                        <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">`;
-
-                // วนลูปกรองแสดงรายการทั้งหมดของเดือนนี้ (เรียงล่าสุดอยู่บน)
-                let currentMonthItems = allTransactions.filter(t => t.mY === m);
-                
-                currentMonthItems.forEach(t => {
-                    let isInc = t.type.includes('รับ');
-                    html += `
-                        <div class="flex justify-between items-center bg-slate-50 p-2 rounded-xl text-xs border border-slate-100">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full ${isInc ? 'bg-emerald-500' : 'bg-red-500'}"></span>
-                                <div>
-                                    <span class="font-bold text-slate-700 block">${t.cat} <span class="font-normal text-slate-400 text-[9px]">(${t.date})</span></span>
-                                    ${t.note ? `<span class="text-[9px] text-slate-400 block italic">${t.note}</span>` : ''}
-                                </div>
-                            </div>
-                            <span class="${isInc ? 'text-emerald-600 font-bold bg-emerald-50' : 'text-red-500 font-bold bg-red-50'} px-2 py-0.5 rounded-md text-[11px]">
-                                ${isInc ? '+' : '-'}${t.amt.toLocaleString()} ฿
-                            </span>
-                        </div>`;
-                });
-
-                html += `       </div>
+                dashboardHTML += `   </div>
                     </div>
                 </div>`;
             });
             
-            sumDiv.innerHTML = html;
+            sumDiv.innerHTML = dashboardHTML;
         })
         .catch(err => { 
             console.error(err);
-            sumDiv.innerHTML = '<p class="text-center text-red-500 py-4">❌ โหลดรายละเอียดข้อมูลล้มเหลว</p>'; 
+            let failHTML = '<p class="text-center text-red-500 py-4 text-xs">❌ โหลดข้อมูลล้มเหลว</p>';
+            sumDiv.innerHTML = failHTML;
+            historyDiv.innerHTML = failHTML;
         });
     }
   </script>
