@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>รายรับ - รายจ่าย (LINE LIFF)</title>
+  <!-- เรียกใช้ Tailwind CSS และ Google Fonts เพื่อความสวยงาม -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- สคริปต์เปิดใช้งานระบบเชื่อมต่อ LINE LIFF SDK -->
@@ -12,21 +13,39 @@
 </head>
 <body class="bg-slate-100 p-4 min-h-screen text-slate-800">
   
-  <!-- หน้าต่างโหลดข้อมูลระหว่างเช็กสิทธิ์ล็อกอินกับแอป LINE -->
+  <!-- ======================================================= -->
+  <!-- 1. หน้าต่างโหลดข้อมูลระหว่างเช็กสิทธิ์ล็อกอินกับแอป LINE       -->
+  <!-- ======================================================= -->
   <div id="loadingPage" class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-sm mt-10 border border-slate-200 text-center text-slate-500">
     ⏳ กำลังเชื่อมต่อระบบบัญชีกับ LINE...
   </div>
 
-  <!-- หน้าล็อกอินเดิม (จะซ่อนไว้ และแสดงเฉพาะกรณีที่เปิดนอกแอป LINE เพื่อความปลอดภัย) -->
+  <!-- ======================================================= -->
+  <!-- 2. หน้าล็อกอิน (แสดงกรณีที่เปิดนอกแอป LINE บนบราวเซอร์ปกติ)       -->
+  <!-- ======================================================= -->
   <div id="loginPage" class="hidden max-w-md mx-auto bg-white p-8 rounded-2xl shadow-sm mt-10 border border-slate-200">
     <h2 class="text-2xl font-bold mb-6 text-center text-blue-600">รายรับ - รายจ่าย</h2>
     <input id="user" placeholder="Username (เช่น 023)" class="w-full border border-slate-300 p-3 mb-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 transition">
     <input id="pass" type="password" placeholder="Password" class="w-full border border-slate-300 p-3 mb-6 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 transition">
     <button onclick="login()" id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-md">เข้าสู่ระบบ</button>
+    
+    <!-- ปุ่มล็อกอินด้วย LINE เพิ่มพิเศษสำหรับใช้งานบนคอมพิวเตอร์ -->
+    <div class="flex items-center my-4">
+      <div class="flex-1 border-t border-slate-200"></div>
+      <span class="px-3 text-slate-400 text-xs uppercase">หรือ</span>
+      <div class="flex-1 border-t border-slate-200"></div>
+    </div>
+    <button onclick="lineLogin()" class="w-full bg-[#06C755] hover:bg-[#05b34c] text-white font-bold py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
+      <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M24 10.304c0-5.222-5.383-9.47-12-9.47S0 5.082 0 10.304c0 4.678 4.253 8.584 10 9.341.389.084.918.257 1.053.589.12.296.079.76.039 1.06l-.169 1.023c-.052.303-.25 1.186 1.081.646 1.331-.54 7.177-4.225 9.792-7.234 1.832-1.993 2.198-3.923 2.198-5.465zm-14.153 3.633h-2.14v-5.2h.714v4.486h1.426v.714zm2.142 0h-.714v-5.2h.714v5.2zm3.327-.714c0 .394-.32.714-.714.714h-1.636v-5.2h.714v4.486h.922c.394 0 .714.32.714.714zm1.902-.714h-1.426v-.931h1.426v-.714h-1.426v-.93h1.426v-.714h-2.14v5.2h2.14v-.711z"/></svg>
+      เข้าสู่ระบบด้วย LINE
+    </button>
   </div>
 
-  <!-- หน้าต่างหลักสำหรับใช้งานบันทึกข้อมูลและดูสรุปยอด -->
+  <!-- ======================================================= -->
+  <!-- 3. หน้าต่างหลักสำหรับใช้งานบันทึกข้อมูลและดูสรุปยอด                -->
+  <!-- ======================================================= -->
   <div id="appPage" class="hidden max-w-lg mx-auto mt-6">
+    <!-- ส่วนหัวแสดงสถานะ User -->
     <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
       <h2 class="text-xl font-extrabold text-slate-800">รายรับ - รายจ่าย</h2>
       <div class="flex items-center gap-2">
@@ -37,6 +56,7 @@
       </div>
     </div>
     
+    <!-- ฟอร์มกรอกรายการใหม่ -->
     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6">
       <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">📝 เพิ่มรายการใหม่</h3>
       <div class="grid grid-cols-2 gap-3 mb-3">
@@ -53,34 +73,36 @@
       <button onclick="save()" id="saveBtn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl transition-all shadow-md">บันทึกข้อมูล</button>
     </div>
 
+    <!-- พื้นที่สำหรับแสดง แดชบอร์ดสรุปยอด -->
     <div id="summary" class="space-y-4"></div>
   </div>
 
+  <!-- ======================================================= -->
+  <!-- 4. ส่วนคำสั่งควบคุมระบบการทำงาน (JavaScript)                   -->
+  <!-- ======================================================= -->
   <script>
-    // ลิงก์ระบบ Google Apps Script หลังบ้านของคุณ
+    // การตั้งค่าตัวแปร (ลิงก์ Google Apps Script และรหัส LINE LIFF ของคุณ)
     const API_URL = "https://script.google.com/macros/s/AKfycbwjXVrTaCl5LX7nglWELqvRStIr_Mm943P8I1pemQGhLEAY38uRfYzn8kNnOsi1mjDRoA/exec"; 
-    // รหัส LIFF ID ที่คุณเพิ่งสร้างขึ้นมาจากเว็บ LINE Developer
     const LIFF_ID = "2010449814-yzT2aeF3"; 
 
     let currentUser = "";
     
-    // ทำงานอัตโนมัติเมื่อเปิดหน้าเว็บขึ้นมา
+    // ทำงานอัตโนมัติทันทีที่เปิดหน้าจอ เพื่อตรวจสอบสิทธิ์ LINE
     window.onload = function() {
       liff.init({ liffId: LIFF_ID })
         .then(() => {
-          // ซ่อนตัวแจ้งเตือนโหลดข้อมูลออกไป
           document.getElementById('loadingPage').classList.add('hidden');
           
           if (liff.isLoggedIn()) {
-            // ถ้าเปิดใช้งานในแอป LINE ให้ดึงโปรไฟล์ผู้ใช้มาทำงานอัตโนมัติทันที
+            // ถ้าอยู่ในระบบ LINE แล้วให้ดึงชื่อเล่นมาใช้เป็น Username อัตโนมัติ[cite: 1]
             liff.getProfile().then(profile => {
-              currentUser = profile.displayName; // ใช้ชื่อเล่นใน LINE เป็น Username บันทึกข้อมูล
+              currentUser = profile.displayName; 
               document.getElementById('displayUser').innerText = "👤 " + currentUser;
-              document.getElementById('appPage').classList.remove('hidden'); // เปิดหน้าบันทึก
-              loadSummary(); // โหลดสรุปรายรับรายจ่ายย้อนหลัง
+              document.getElementById('appPage').classList.remove('hidden'); 
+              loadSummary(); 
             });
           } else {
-            // หากไม่ได้เปิดใน LINE (เปิดบนเว็บทั่วไป) ให้เด้งไปใช้หน้าล็อกอินกรอกรหัสผ่านแบบเดิม
+            // ถ้าเปิดข้างนอกแอป ให้ถอยไปแสดงหน้าล็อกอินปกติ[cite: 1]
             document.getElementById('loginPage').classList.remove('hidden');
           }
         })
@@ -91,6 +113,14 @@
         });
     };
 
+    // ฟังก์ชันเปิดหน้าต่างล็อกอินของ LINE
+    function lineLogin() {
+      if (!liff.isLoggedIn()) {
+        liff.login();
+      }
+    }
+
+    // ฟังก์ชันระบบล็อกอินแบบเดิม (กรณีล็อกอินด้วย Username/Password แมนนวล)
     function login() {
       let u = document.getElementById('user').value;
       let p = document.getElementById('pass').value;
@@ -121,6 +151,7 @@
       });
     }
 
+    // ฟังก์ชันการออกจากระบบ (Logout)[cite: 1]
     function logout() {
       if(confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
           if (liff.isLoggedIn()) {
@@ -141,6 +172,7 @@
       }
     }
 
+    // ฟังก์ชันส่งบันทึกข้อมูลรายรับรายจ่ายไปยัง Google Sheets[cite: 1]
     function save() {
       let data = { 
           user: currentUser, 
@@ -169,6 +201,7 @@
       });
     }
 
+    // ฟังก์ชันแปลงรูปแบบวันที่เป็นเดือนภาษาไทยอย่างถูกต้อง
     function parseThaiMonth(dateStr) {
         try {
             if (!dateStr) return "ไม่ระบุเดือน";
@@ -189,6 +222,7 @@
         return "มิถุนายน 2569";
     }
 
+    // ฟังก์ชันโหลดข้อมูลย้อนหลังมาจัดหมวดหมู่คำนวณแดชบอร์ด
     function loadSummary() {
         let sumDiv = document.getElementById('summary');
         sumDiv.innerHTML = '<p class="text-center text-slate-500 py-4">⏳ กำลังคำนวณสรุปยอด...</p>';
